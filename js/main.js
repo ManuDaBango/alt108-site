@@ -13,7 +13,7 @@
 // Paste the "Production URL" of an n8n Webhook node between the quotes
 // (see EDITING-GUIDE.md, "Connect the contact form").
 // While it is empty, the form opens the visitor's email app instead.
-const FORM_WEBHOOK = "";
+const FORM_WEBHOOK = "https://alt108.app.n8n.cloud/webhook/alt108-enquiry";
 
 // Where enquiries go if the webhook is empty or fails
 const CONTACT_EMAIL = "manu@alt108.com";
