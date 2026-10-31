@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inspection reports demo | alt108</title>
+  <meta name="description" content="Try a live web app that replaces Word inspection reports for an electrical contractor. Answers go straight into a database.">
+  <link rel="icon" href="../images/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <!-- "../" means "go up one folder", because this page sits inside /inspector/ -->
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<!-- HEADER: same as the main page, but links point back to it with ../ -->
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="../">alt<span>108</span></a>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+    <nav class="menu">
+      <a href="../#demos">All demos</a>
+      <a href="../#pricing">Pricing</a>
+      <a href="../#about">About</a>
+      <a class="btn btn-primary" href="../#contact">Free strategy session</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- =================================================================
+     DEMO PAGE LAYOUT (the same six blocks on every demo page)
+       1. Title and promise   2. The problem   3. Try it (split screen)
+       4. Walkthrough video   5. What it could do for you   6. Built with + button
+     ================================================================= -->
+
+<!-- 1 + 2. TITLE, PROMISE AND PROBLEM -->
+<section class="demo-hero">
+  <div class="wrap">
+    <div class="crumb"><a href="../#demos">← All demos</a></div>
+    <span class="label">Demo · Inspection reports</span>
+    <h1>Fill in a site report once, on any device. Never re-type it.</h1>
+    <p class="lead">
+      An electrical contractor's team filled in Word reports on tablets. Someone then re-typed the
+      answers into another system, which was slow and caused errors. This app replaced the Word form.
+    </p>
+  </div>
+</section>
+
+<!-- 3. TRY IT: the app on the left, the database on the right -->
+<section>
+  <div class="wrap">
+    <h2>Try it</h2>
+    <p>
+      Choose <b>Technician</b>, start the scheduled inspection, fill in a few switchboards and sign off.
+      Your submission is sent to the demo database on the right. Switch to <b>Admin</b> to see job scheduling,
+      switchboard history and the defect register.
+    </p>
+    <p class="note">This is a demo with made-up data. Please don't enter anything private.</p>
+    <!-- When the nightly reset is switched on, add this line back:
+    <p class="note">Demo data resets every night.</p> -->
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <span>The app (what the technician sees)</span>
+          <a href="app.html" target="_blank" rel="noopener">Open full screen ↗</a>
+        </div>
+        <!-- The app itself lives in app.html in this same folder -->
+        <iframe src="app.html" title="Inspection report demo app"></iframe>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span>The database (read-only, live)</span>
+          <a href="https://airtable.com/apppyGNVhFHkN0H21/shr8TomhB8UMWNC5a" target="_blank" rel="noopener">Open ↗</a>
+        </div>
+        <!-- Airtable read-only shared view. To change it: in Airtable click Share view,
+             copy the link, and put "/embed" right after "airtable.com" -->
+        <iframe src="https://airtable.com/embed/apppyGNVhFHkN0H21/shr8TomhB8UMWNC5a" title="Inspection results in Airtable (read-only)"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. WALKTHROUGH VIDEO
+     When your video is ready (YouTube or Loom), delete the placeholder <div>
+     and paste the video's embed code inside <div class="video-box">. Example:
+     <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" title="Walkthrough" allowfullscreen></iframe> -->
+<section class="alt">
+  <div class="wrap">
+    <h2>Rather watch? 90-second walkthrough</h2>
+    <div class="video-box panel">
+      <div class="placeholder" style="height:100%">Walkthrough video coming soon</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. WHAT IT COULD DO FOR YOU -->
+<section>
+  <div class="wrap">
+    <h2>What this could do for your business</h2>
+    <div class="facts">
+      <div class="fact">
+        <h3>Any form can become an app</h3>
+        <p>Word, PDF, paper or spreadsheet. If your team fills it in, it can work like this.</p>
+      </div>
+      <div class="fact">
+        <h3>The data starts working for you</h3>
+        <p>Once answers sit in a database they can send an email, build a report or flag a problem on their own.</p>
+      </div>
+      <div class="fact">
+        <h3>History you can trust</h3>
+        <p>Every visit is kept. You can see what changed on each switchboard, and when.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. BUILT WITH + CALL TO ACTION -->
+<section class="cta-band">
+  <div class="wrap">
+    <p class="label" style="color:var(--soft)">Built with</p>
+    <ul class="built-with" style="justify-content:center">
+      <li>Airtable</li><li>n8n</li><li>Cloudflare</li><li>Claude Code</li>
+    </ul>
+    <h2 style="margin-top:32px">Want one like this for your team?</h2>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="../#contact">Book a free strategy session</a>
+      <a class="btn btn-dark" href="../#demos">See other demos</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© <span class="year"></span> alt108 · Perth, Western Australia</span>
+    <span><a href="mailto:manu@alt108.com">manu@alt108.com</a> · <a href="tel:+61400004414">0400 004 414</a></span>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

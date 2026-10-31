@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asset tracker demo | alt108</title>
+  <meta name="description" content="Try a live asset tracker: report an asset by web form, Telegram or email and watch it land in the register.">
+  <link rel="icon" href="../images/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="../">alt<span>108</span></a>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+    <nav class="menu">
+      <a href="../#demos">All demos</a>
+      <a href="../#pricing">Pricing</a>
+      <a href="../#about">About</a>
+      <a class="btn btn-primary" href="../#contact">Free strategy session</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- 1 + 2. TITLE, PROMISE AND PROBLEM -->
+<section class="demo-hero">
+  <div class="wrap">
+    <div class="crumb"><a href="../#demos">← All demos</a></div>
+    <span class="label">Demo · Asset tracker</span>
+    <h1>Let the people who see your assets keep the register up to date.</h1>
+    <p class="lead">
+      A waste management company's register is missing hundreds of skip and bulk bins worth about
+      $10,000 each. Updating it is nobody's job. This app makes reporting an asset take seconds.
+    </p>
+  </div>
+</section>
+
+<!-- 3. TRY IT -->
+<section>
+  <div class="wrap">
+    <h2>Try it</h2>
+    <p>Report an asset with the web form and watch it arrive in the register. The review step catches duplicates and errors before they reach the register.</p>
+    <p class="note">This is a demo with made-up data. Please don't enter anything private.</p>
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <span>The app</span>
+          <a href="https://asset-tracker-4w67.onrender.com" target="_blank" rel="noopener">Open full screen ↗</a>
+        </div>
+        <!-- The app runs on Render. If this box ever shows blank, visitors can still use
+             the "Open full screen" link above. Render's paid plan keeps it awake. -->
+        <iframe src="https://asset-tracker-4w67.onrender.com" title="Asset tracker demo app"></iframe>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span>The register (read-only, live)</span></div>
+        <!-- TO ADD THE AIRTABLE VIEW: in Airtable, open the asset table's view,
+             click Share view, copy the link (it starts https://airtable.com/app.../shr...),
+             add "/embed" after "airtable.com", then replace the placeholder <div> below with:
+             <iframe src="https://airtable.com/embed/appXXXX/shrXXXX" title="Asset register (read-only)"></iframe> -->
+             <iframe src="https://airtable.com/embed/appFFZYk06GOEXjhF/shruLtRsIKXAQRgYO" title="Asset register (read-only)"></iframe> 
+        <!-- <div class="placeholder">The live register view will appear here.</div> -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. WALKTHROUGH VIDEO (see inspector/index.html for how to paste a video) -->
+<section class="alt">
+  <div class="wrap">
+    <h2>Rather watch? 60-second walkthrough</h2>
+    <div class="video-box panel">
+      <div class="placeholder" style="height:100%">Walkthrough video coming soon</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. WHAT IT COULD DO FOR YOU -->
+<section>
+  <div class="wrap">
+    <h2>What this could do for your business</h2>
+    <div class="facts">
+      <div class="fact">
+        <h3>Report from wherever you are</h3>
+        <p>A sales rep on site, a client or an auditor can send an asset by Telegram, email or web form.</p>
+      </div>
+      <div class="fact">
+        <h3>A register people trust</h3>
+        <p>A review step stops duplicates and mistakes, so the register stays reliable over time.</p>
+      </div>
+      <div class="fact">
+        <h3>Anything that goes missing</h3>
+        <p>Equipment, vehicles, tools or stock: if it goes missing on paper, it can be tracked this way.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. BUILT WITH + CALL TO ACTION -->
+<section class="cta-band">
+  <div class="wrap">
+    <p class="label" style="color:var(--soft)">Built with</p>
+    <ul class="built-with" style="justify-content:center">
+      <li>Airtable</li><li>n8n</li><li>Telegram</li><li>Render</li><li>Claude Code</li>
+    </ul>
+    <h2 style="margin-top:32px">Want one like this for your team?</h2>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="../#contact">Book a free strategy session</a>
+      <a class="btn btn-dark" href="../#demos">See other demos</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© <span class="year"></span> alt108 · Perth, Western Australia</span>
+    <span><a href="mailto:manu@alt108.com">manu@alt108.com</a> · <a href="tel:+61400004414">0400 004 414</a></span>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>
