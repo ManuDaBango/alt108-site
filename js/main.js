@@ -47,7 +47,9 @@ if (form) {
 
     // No webhook yet: build an email with the answers and open the email app
     if (!FORM_WEBHOOK) {
-      openEmail(data);
+      statusBox.innerHTML =
+        "Sorry, the form isn't connected yet. Please email <a href='mailto:" + CONTACT_EMAIL + "'>" +
+        CONTACT_EMAIL + "</a> or call 0400 004 414.";
       return;
     }
 
