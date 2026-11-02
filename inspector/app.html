@@ -54,30 +54,29 @@ h3.sec{margin:20px 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:
 </style></head><body>
 <div id="app"><nav class="rail"><small id="companyName">Your Company Name</small><h1>FieldOps</h1>
 <div class="role"><button id="rt" class="on" onclick="setRole('tech')">Technician</button><button id="ra" onclick="setRole('admin')">Admin</button></div>
-<div class="nav" id="nav"></div><p class="soft" style="color:#7C8794;margin-top:24px">Demo · synthetic data<br>PMWT module v0.3</p></nav>
+<div class="nav" id="nav"></div><p class="soft" style="color:#7C8794;margin-top:24px">Demo · synthetic data<br>PMWT module v0.4<br><span id="src"></span></p></nav>
 <main id="v"></main></div><div class="toast" id="toast"></div>
 <script>
-/* To connect this demo to the Airtable base yourself via n8n:
-   1. In n8n, create a workflow starting with a Webhook node (POST). Copy its Production URL.
-   2. Paste that URL into WEBHOOK below and republish this page.
-   3. After the Webhook node, add an Airtable node (Create/Update record) for each of: Jobs,
-      General Maintenance Results, Item Results, Timeclock Results — mapping fields from the
-      JSON body this page posts on submit (see submitJob below for its shape).
-   4. Until WEBHOOK is set, use the "Copy inspection data (JSON)" button on the report screen
-      and paste that JSON into an n8n "Manual" trigger to test your mapping before going live. */
+/* Setup: WEBHOOK receives submitted inspections (n8n -> Airtable). CATALOG_URL reads clients, sites,
+   switchboards and register items live from Airtable through a read-only n8n workflow. If the catalog
+   cannot be reached the page falls back to the built-in snapshot below, so the demo never breaks. */
 const WEBHOOK="https://alt108.app.n8n.cloud/webhook/5f2e224a-f3de-4a3c-80bb-2c4cefebd8cd";
+const CATALOG_URL="https://alt108.app.n8n.cloud/webhook/fieldops-catalog";
 const CHECKS=["Switchboard interior clean and tidy","Covers on and no exposed conductors","Legend in place and up to date","Emergency lighting logbook in place and up to date","PES 24/7 contact details visible","All RCDs / MCBs in active position"];
 const DEF="No action required";
 const CAT={Light:["LED","Regular","OldSkool","Ceiling","Floodlight"],Fan:["Ceiling","Exhaust"],Alarm:["Motion","Smoke"]};
 const RESULTS=["No issues","Defective","N/A","See Comments"];
-const TECH=["Jake Morrison","Priya Nair"];
 const CONDS=["Very Poor","Poor","Satisfactory","Above Average"];
-const SITE="Adelaide Tce",CLIENT="GB Mines";
 const COMPANY="Your Company Name"; // change this per demo — it's the electrical contractor's own name shown in the top-left
-const SBS=[["AA1","Entrance"],["AA2","Foyer"],["AA3","Toilet"],["QN1","Ground"],["QN2","Level 1"],["QN3","Level 2"]].map(([n,l])=>({id:"SB-"+n,loc:l}));
-const RAW={"SB-AA1":"L:LED:2,L:LED:3,F:Ceiling:4,F:Exhaust:4,F:Exhaust:4,F:Exhaust:4","SB-AA2":"L:LED:2,L:LED:2,F:Ceiling:1","SB-AA3":"L:LED:3,L:LED:2,A:Motion:3,L:Floodlight:4,L:Floodlight:4","SB-QN1":"L:LED:1,L:LED:2,L:Ceiling:3,F:Exhaust:4,F:Ceiling:3,F:Exhaust:2","SB-QN2":"L:LED:1,L:LED:3,F:Ceiling:2","SB-QN3":"L:LED:1,L:LED:7,A:Smoke:3,L:Floodlight:4,L:Floodlight:2"};
 const TN={L:"Light",F:"Fan",A:"Alarm"};
-// Technician-assigned area names, freeform, set at initial site setup — no naming logic.
+// Offline snapshot of the Airtable data: [client, site, [[switchboard, location, "T:Sub:Qty,..."]]]
+const SNAP_RAW=[
+["GB Mines","Adelaide Tce",[["SB-AA1","Entrance","L:LED:2,L:LED:3,F:Ceiling:4,F:Exhaust:4,F:Exhaust:4,F:Exhaust:4"],["SB-AA2","Foyer","L:LED:2,L:LED:2,F:Ceiling:1"],["SB-AA3","Toilet","L:LED:3,L:LED:2,A:Motion:3,L:Floodlight:4,L:Floodlight:4"]]],
+["GB Mines","Fremantle",[["SB-QN1","Ground","L:LED:1,L:LED:2,L:Ceiling:3,F:Exhaust:4,F:Ceiling:3,F:Exhaust:2"],["SB-QN2","Level 1","L:LED:1,L:LED:3,F:Ceiling:2"],["SB-QN3","Level 2","L:LED:1,L:LED:7,A:Smoke:3,L:Floodlight:4,L:Floodlight:2"]]],
+["Palatino","Malaga",[["SB-AA4","Entrance","F:Exhaust:1,F:Exhaust:2,F:Ceiling:3,F:Exhaust:4"],["SB-AA5","Foyer","F:Exhaust:5,F:Exhaust:6,L:LED:7"],["SB-AA6","Ground","L:LED:8,F:Ceiling:1,L:LED:9,L:LED:2,A:Motion:3,F:Exhaust:4,L:Floodlight:3,L:LED:4,F:Ceiling:5"]]],
+["Palatino","Mandurah",[["SB-QN5","Level 2","F:Ceiling:2,L:LED:8"],["SB-QN6","Toilet","A:Smoke:1,A:Smoke:7,L:Floodlight:4,L:Floodlight:1"]]],
+["Doc’sPizza","Kewsdale",[["SB-QN4","Level 1","L:Ceiling:4,F:Exhaust:3,F:Ceiling:3,F:Exhaust:5,L:LED:1,L:LED:65"]]]];
+// Technician-assigned area names for the original GB Mines boards (other boards use their location as the area name).
 const AREA={"SB-AA1":["Reception","Reception","Reception Ceiling","Male Toilet","Female Toilet","Store Room"],
  "SB-AA2":["Foyer North","Foyer South","Foyer Ceiling"],
  "SB-AA3":["Toilet Vanity","Toilet Cubicles","Toilet Corridor","Outside East","Outside West"],
@@ -85,31 +84,41 @@ const AREA={"SB-AA1":["Reception","Reception","Reception Ceiling","Male Toilet",
  "SB-QN2":["Level 1 Office","Level 1 Meeting Rm","Level 1 Ceiling"],
  "SB-QN3":["Level 2 Office A","Level 2 Office B","Level 2 Landing","Roof North","Roof South"]};
 const lbl=x=>x.type+" - "+x.sub;
-const seedTC=()=>[{id:"tc1",sb:"SB-AA1",loc:"Entrance",group:"Exterior Lights",on:"Dusk",off:"Dawn"},{id:"tc2",sb:"SB-AA3",loc:"Outside",group:"Toilet Block Floodlights",on:"Dusk",off:"Dawn"},{id:"tc3",sb:"SB-QN3",loc:"Roof",group:"Roof Floodlights",on:"18:00",off:"06:00"}];
-
-function seedReg(){const R=[];Object.entries(RAW).forEach(([sb,s])=>s.split(",").forEach((t,i)=>{const[a,b,c]=t.split(":");R.push({id:sb+"-"+(i+1),sb,type:TN[a],sub:b,qty:+c,line:i+1,area:(AREA[sb]&&AREA[sb][i])||"Area "+(i+1),active:true,added:"2025-01-01",removed:null,note:""})}));
- // simulated changes so history can show a changing configuration
- R.push({id:"SB-QN2-4",sb:"SB-QN2",type:"Fan",sub:"Exhaust",qty:2,line:4,area:"Level 1 Toilet",active:true,added:"2026-04-01",removed:null,note:"Added on site 2026-04-01"});
+const mkItems=(id,loc,str)=>str.split(",").map((t,i)=>{const[a,b,c]=t.split(":");return{type:TN[a],sub:b,qty:+c,line:i+1,area:(AREA[id]&&AREA[id][i])||loc}});
+function snapCatalog(){const m={};SNAP_RAW.forEach(([c,s,bs])=>{(m[c]=m[c]||{name:c,sites:[]}).sites.push({name:s,boards:bs.map(([id,loc,str])=>({id,loc,items:mkItems(id,loc,str)}))})});
+ return{clients:Object.values(m),technicians:["Jake Morrison","Gina Richie"],jobNumbers:[]}}
+function fromLive(d){return{clients:d.clients.map(c=>({name:c.name,sites:c.sites.map(s=>({name:s.name,boards:s.boards.map(b=>({id:b.name,loc:b.loc||"",items:b.items.map(i=>({type:i.type,sub:i.sub,qty:i.qty,line:i.line,area:i.area||(AREA[b.name]&&AREA[b.name][i.line-1])||b.loc||""}))}))}))})),technicians:d.technicians||[],jobNumbers:d.jobNumbers||[]}}
+let DB=snapCatalog(),SRC="snapshot";
+const techs=()=>DB.technicians&&DB.technicians.length?DB.technicians:["Jake Morrison","Gina Richie"];
+const findSite=(c,s)=>{const cl=DB.clients.find(x=>x.name===c);return cl&&cl.sites.find(x=>x.name===s)};
+const allBoardIds=()=>[...new Set(S.reg.map(r=>r.sb))].sort();
+function pushItems(reg,b){b.items.forEach(i=>reg.push({id:b.id+"-"+i.line,sb:b.id,type:i.type,sub:i.sub,qty:i.qty,line:i.line,area:i.area,active:true,added:"2025-01-01",removed:null,note:""}))}
+function ensureReg(reg,b){if(!reg.some(r=>r.sb===b.id))pushItems(reg,b)}
+function seedReg(){const R=[];snapCatalog().clients[0].sites[0].boards.forEach(b=>pushItems(R,b)); // GB Mines > Adelaide Tce history
  R.push({id:"SB-AA3-6",sb:"SB-AA3",type:"Light",sub:"Regular",qty:2,line:6,area:"Toilet Block Annex",active:false,added:"2025-01-01",removed:"2026-06-15",note:"Removed on 2026-06-15 (PMWT-2026-0121)"});return R}
-function snap(job,reg){ // copy the CURRENT register + timeclocks into this visit's own result rows
- job.lines=reg.filter(x=>x.added<=job.date&&(!x.removed||x.removed>=job.date)&&(x.active||x.removed>=job.date&&job.status!=="Scheduled")).map(x=>({id:job.id+"-"+x.id,sb:x.sb,reg:x.id,type:x.type,sub:x.sub,qty:x.qty,line:x.line,area:x.area,r:null,c:"",added:false,removed:false}));
- job.gm={};SBS.forEach(s=>{job.gm[s.id]=CHECKS.map(()=>({r:null,c:DEF}))});job.bc={};job.cond=null;
- job.tc=S.tc.map(t=>({...t,removed:false}))}
-function past(id,num,date,tech,gmFail,lineOv,cond){const j={id,num,date,tech,status:"Report Issued",cond};
+function newJob(id,num,date,tech,client,site,reg){const st=findSite(client,site);const sbs=st.boards.map(b=>({id:b.id,loc:b.loc}));st.boards.forEach(b=>ensureReg(reg,b));
+ return{id,num,date,tech,client,site,sbs,status:"Scheduled",lines:[],gm:{},bc:{},cond:null}}
+function nextNum(){const n=Math.max(0,...S.jobs.map(j=>+j.num.slice(-4)),...DB.jobNumbers.map(x=>+String(x).slice(-4)||0));return"PMWT-2026-"+String(n+1).padStart(4,"0")}
+function snap(job,reg){ // copy the CURRENT register into this visit's own result rows
+ const ids=job.sbs.map(s=>s.id);
+ job.lines=reg.filter(x=>ids.includes(x.sb)&&x.added<=job.date&&(!x.removed||x.removed>=job.date)&&(x.active||x.removed>=job.date&&job.status!=="Scheduled")).map(x=>({id:job.id+"-"+x.id,sb:x.sb,reg:x.id,type:x.type,sub:x.sub,qty:x.qty,line:x.line,area:x.area,r:null,c:"",added:false,removed:false}));
+ job.gm={};job.sbs.forEach(s=>{job.gm[s.id]=CHECKS.map(()=>({r:null,c:DEF}))});job.bc={};job.cond=null}
+function past(id,num,date,tech,gmFail,lineOv,cond){const sbs=[{id:"SB-AA1",loc:"Entrance"},{id:"SB-AA2",loc:"Foyer"},{id:"SB-AA3",loc:"Toilet"}];
+ const j={id,num,date,tech,client:"GB Mines",site:"Adelaide Tce",sbs,status:"Report Issued",cond};
  const reg=seedReg();
  j.lines=reg.filter(x=>x.added<=date&&(!x.removed||x.removed>=date)).map(x=>({id:id+"-"+x.id,sb:x.sb,reg:x.id,type:x.type,sub:x.sub,qty:x.qty,line:x.line,area:x.area,r:"No issues",c:"",added:false,removed:false}));
- j.gm={};SBS.forEach(s=>{j.gm[s.id]=CHECKS.map(()=>({r:"Yes",c:DEF}))});j.bc={};
- j.tc=seedTC().map(t=>({...t,removed:false}));
+ j.gm={};sbs.forEach(s=>{j.gm[s.id]=CHECKS.map(()=>({r:"Yes",c:DEF}))});j.bc={};
  gmFail.forEach(([sb,i,c])=>{j.gm[sb][i]={r:"No",c}});
  lineOv.forEach(([lid,r,c,rem])=>{const l=j.lines.find(x=>x.reg===lid);if(l){l.r=r;l.c=c;if(rem)l.removed=true}});return j}
 function initial(){const reg=seedReg();
- const jobs=[past("j1","PMWT-2026-0088","2026-02-09","Jake Morrison",[["SB-QN1",2,"Legend outdated after board rework. Update required."]],[["SB-AA1-4","Defective","One exhaust fan not running."]],"Poor"),
-  past("j2","PMWT-2026-0121","2026-06-15","Priya Nair",[["SB-AA3",3,"Logbook missing from board."]],[["SB-AA3-4","See Comments","1 of 4 floodlights flickering, monitor."],["SB-AA3-6","N/A","Fittings removed by client.",true]],"Satisfactory")];
- jobs.forEach(j=>{j.bc={}});jobs[0].bc["SB-QN1"]="Board reworked in January; legend not yet updated.";
- const n={id:"j3",num:"PMWT-2026-0150",date:"2026-10-05",tech:"Jake Morrison",status:"Scheduled",lines:[],gm:{},bc:{},cond:null,tc:[]};jobs.push(n);
- return{reg,tc:seedTC(),jobs,role:"tech",view:"jobs",jid:null,sb:null,hsb:"SB-QN2",nn:0}}
-let S;try{S=JSON.parse(localStorage.getItem("fo3"))}catch(e){}if(!S)S=initial();
-const save=()=>{try{localStorage.setItem("fo3",JSON.stringify(S))}catch(e){}};
+ const jobs=[past("j1","PMWT-2026-0088","2026-02-09","Jake Morrison",[["SB-AA2",2,"Legend outdated after board rework. Update required."]],[["SB-AA1-4","Defective","One exhaust fan not running."]],"Poor"),
+  past("j2","PMWT-2026-0121","2026-06-15","Gina Richie",[["SB-AA3",3,"Logbook missing from board."]],[["SB-AA3-4","See Comments","1 of 4 floodlights flickering, monitor."],["SB-AA3-6","N/A","Fittings removed by client.",true]],"Satisfactory")];
+ jobs[0].bc["SB-AA2"]="Board reworked in January; legend not yet updated.";
+ jobs.push(newJob("j3","PMWT-2026-0153","2026-11-02","Jake Morrison","Palatino","Mandurah",reg));
+ jobs.push(newJob("j4","PMWT-2026-0154","2026-11-03","Gina Richie","GB Mines","Adelaide Tce",reg));
+ return{reg,jobs,role:"tech",view:"jobs",jid:null,sb:null,hsb:"SB-AA1",nn:0,nj:{client:"",site:""}}}
+let S;try{S=JSON.parse(localStorage.getItem("fo4"))}catch(e){}if(!S)S=initial();
+const save=()=>{try{localStorage.setItem("fo4",JSON.stringify(S))}catch(e){}};
 const $=id=>document.getElementById(id);const J=id=>S.jobs.find(j=>j.id===id);
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2400)}
@@ -117,22 +126,22 @@ function go(view,o={}){Object.assign(S,{view},o);render()}
 function setRole(r){S.role=r;S.view=r==="tech"?"jobs":"admin";render()}
 const lines=(j,sb)=>j.lines.filter(l=>l.sb===sb).sort((a,b)=>a.line-b.line);
 const boardDone=(j,sb)=>j.gm[sb].every(g=>g.r&&(g.r==="Yes"||g.c.trim()))&&lines(j,sb).every(l=>l.removed||(l.r&&(l.r==="No issues"||l.r==="N/A"||l.c.trim())));
-const progress=j=>SBS.filter(s=>boardDone(j,s.id)).length;
+const progress=j=>j.sbs.filter(s=>boardDone(j,s.id)).length;
 
 /* ---------- Technician ---------- */
-function vJobs(){let h=`<h2>My jobs</h2><p class="soft">${CLIENT} · ${SITE} — bookings created and allocated by the office.</p>`;
+function vJobs(){let h=`<h2>My jobs</h2><p class="soft">Bookings created and allocated by the office.</p>`;
  S.jobs.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(j=>{
- h+=`<div class="card row sp"><div><div class="mono">${j.num}</div><h3>${CLIENT} — ${SITE}</h3><div class="soft">👷 ${j.tech} · 📅 ${j.date} · ${SBS.length} switchboards</div></div>
- <div class="row"><span class="badge b-${j.status.replace(/ /g,"")}">${j.status}</span>${j.status==="Scheduled"?`<button class="btn" onclick="startJob('${j.id}')">Start inspection</button>`:j.status==="In Progress"?`<button class="btn" onclick="go('form',{jid:'${j.id}',sb:S.sb||SBS[0].id})">Continue (${progress(j)}/${SBS.length})</button>`:`<button class="btn s" onclick="go('report',{jid:'${j.id}'})">View report</button>`}</div></div>`});
+ h+=`<div class="card row sp"><div><div class="mono">${j.num}</div><h3>${esc(j.client)} — ${esc(j.site)}</h3><div class="soft">👷 ${j.tech} · 📅 ${j.date} · ${j.sbs.length} switchboard${j.sbs.length===1?"":"s"} (${j.sbs.map(s=>s.id).join(", ")})</div></div>
+ <div class="row"><span class="badge b-${j.status.replace(/ /g,"")}">${j.status}</span>${j.status==="Scheduled"?`<button class="btn" onclick="startJob('${j.id}')">Start inspection</button>`:j.status==="In Progress"?`<button class="btn" onclick="go('form',{jid:'${j.id}',sb:'${j.sbs[0].id}'})">Continue (${progress(j)}/${j.sbs.length})</button>`:`<button class="btn s" onclick="go('report',{jid:'${j.id}'})">View report</button>`}</div></div>`});
  return h}
-function startJob(id){const j=J(id);snap(j,S.reg);j.status="In Progress";save();go("form",{jid:id,sb:SBS[0].id});toast("Blank form created from today's switchboard register")}
-function vForm(){const j=J(S.jid),sb=S.sb;
- let h=`<div class="soft"><a href="#" onclick="go('jobs');return false">My jobs</a> / ${j.num}</div><h2>PMWT inspection — ${SITE}</h2>
- <div class="soft">${CLIENT} · ${j.tech} · ${j.date} · ${progress(j)} of ${SBS.length} switchboards complete</div>
+function startJob(id){const j=J(id);snap(j,S.reg);j.status="In Progress";save();go("form",{jid:id,sb:j.sbs[0].id});toast("Blank form created from this site's switchboard register")}
+function vForm(){const j=J(S.jid);let sb=S.sb;if(!j.sbs.some(s=>s.id===sb))sb=S.sb=j.sbs[0].id;
+ let h=`<div class="soft"><a href="#" onclick="go('jobs');return false">My jobs</a> / ${j.num}</div><h2>PMWT inspection — ${esc(j.site)}</h2>
+ <div class="soft">${esc(j.client)} · ${j.tech} · ${j.date} · ${progress(j)} of ${j.sbs.length} switchboards complete</div>
  <div class="note">This form was built fresh from the site's <b>current</b> switchboard register. Anything you add, remove or change below applies to this visit's report only; the register updates for <b>future</b> visits when you submit. Past reports never change.</div>
  <div class="card"><b>Overall condition of electrical system</b><div class="condrow">${CONDS.map(c=>`<button class="${(c==="Very Poor"||c==="Poor")?"bad":"good"} ${j.cond===c?"on":""}" onclick="setCond('${c}')">${c}</button>`).join("")}</div></div>
- <div class="pills">${SBS.map(s=>`<button class="pill ${sb===s.id?"on":boardDone(j,s.id)?"ok":""}" onclick="S.sb='${s.id}';render()">${boardDone(j,s.id)?"✓ ":""}${s.id}</button>`).join("")}</div>`;
- const b=SBS.find(s=>s.id===sb);
+ <div class="pills">${j.sbs.map(s=>`<button class="pill ${sb===s.id?"on":boardDone(j,s.id)?"ok":""}" onclick="S.sb='${s.id}';render()">${boardDone(j,s.id)?"✓ ":""}${s.id}</button>`).join("")}</div>`;
+ const b=j.sbs.find(s=>s.id===sb);
  h+=`<h3>SWITCHBOARD NAME: ${b.id} &nbsp;·&nbsp; LOCATION: ${b.loc}</h3>
  <h3 class="sec">Part 1 — General maintenance</h3><table><tr><th>Check</th><th style="width:150px">Yes / No</th><th style="width:36%">Comments</th></tr>
  ${CHECKS.map((c,i)=>{const g=j.gm[sb][i];return`<tr><td>${c}</td><td><div class="yn"><button class="Y ${g.r==="Yes"?"on":""}" onclick="gm(${i},'Yes')">Yes</button><button class="N ${g.r==="No"?"on":""}" onclick="gm(${i},'No')">No</button></div></td>
@@ -148,7 +157,7 @@ function vForm(){const j=J(S.jid),sb=S.sb;
  <td>${l.removed?`<button class="btn s" onclick="rm('${l.id}')">Undo</button>`:`<button class="btn s" title="No longer connected" onclick="rm('${l.id}')">Remove</button>`}</td></tr>`).join("")}</table>
  <div class="card row"><b>Found something new?</b><input type="text" id="na" placeholder="Area name" style="width:140px"><select id="nt" style="width:110px" onchange="fillSub()">${Object.keys(CAT).map(t=>`<option>${t}</option>`).join("")}</select><select id="ns" style="width:130px"></select><input type="number" id="nq" min="1" value="1"><button class="btn s" onclick="addItem()">+ Add to this board</button></div>
  <h3 class="sec">Board comments</h3><textarea rows="3" oninput="S.jobs.find(x=>x.id==S.jid).bc['${sb}']=this.value;save()" placeholder="General notes for this switchboard">${esc(j.bc[sb])}</textarea>
- <div class="row" style="margin-top:18px"><button class="btn" ${(progress(j)<SBS.length||!j.cond)?"disabled":""} onclick="submitJob()">Complete inspection &amp; sign off</button><span class="soft">${!j.cond?"Select the overall system condition above.":progress(j)<SBS.length?"Every switchboard needs all checks answered (comments required for No / Defective / See Comments).":"Ready to submit."}</span></div>`;
+ <div class="row" style="margin-top:18px"><button class="btn" ${(progress(j)<j.sbs.length||!j.cond)?"disabled":""} onclick="submitJob()">Complete inspection &amp; sign off</button><span class="soft">${!j.cond?"Select the overall system condition above.":progress(j)<j.sbs.length?"Every switchboard needs all checks answered (comments required for No / Defective / See Comments).":"Ready to submit."}</span></div>`;
  return h}
 const setCond=c=>{J(S.jid).cond=c;save();render()};
 const gm=(i,r)=>{const g=J(S.jid).gm[S.sb][i];g.r=r;if(r==="No"&&g.c===DEF)g.c="";if(r==="Yes"&&!g.c.trim())g.c=DEF;save();render()};
@@ -160,53 +169,54 @@ const rm=id=>{const l=L(id);l.removed=!l.removed;if(l.removed){l.r="N/A";if(!l.c
 function fillSub(){$("ns").innerHTML=CAT[$("nt").value].map(s=>`<option>${s}</option>`).join("")}
 function addItem(){const j=J(S.jid),t=$("nt").value,s=$("ns").value,q=Math.max(1,+$("nq").value||1),area=$("na").value.trim()||"New area";const n=Math.max(0,...lines(j,S.sb).map(l=>l.line))+1;
  j.lines.push({id:j.id+"-n"+(++S.nn),sb:S.sb,reg:null,type:t,sub:s,qty:q,line:n,area,r:null,c:"",added:true,removed:false});save();render();toast("Added to this report. It joins the register on submit.")}
-const TC=id=>J(S.jid).tc.find(t=>t.id===id);
-const tcEdit=(id,k,v)=>{TC(id)[k]=v;save()};
-const tcRemove=id=>{const t=TC(id);t.removed=!t.removed;save();render()};
-const tcAdd=()=>{J(S.jid).tc.push({id:"tc"+Date.now()+(++S.nn),sb:S.sb,loc:"",group:"",on:"",off:"",removed:false});save();render()};
 function submitJob(){const j=J(S.jid);
  j.lines.forEach(l=>{if(l.added&&!l.reg){const id="R"+Date.now()+l.id;S.reg.push({id,sb:l.sb,type:l.type,sub:l.sub,qty:l.qty,line:l.line,area:l.area,active:true,added:j.date,removed:null,note:`Added on site ${j.date} (${j.num})`});l.reg=id}
  else if(l.reg){const x=S.reg.find(r=>r.id===l.reg);if(!x)return;if(l.removed){x.active=false;x.removed=j.date;x.note=`Removed on ${j.date} (${j.num})`}else{if(x.qty!==l.qty){x.note=`Qty ${x.qty} → ${l.qty} on ${j.date} (${j.num})`;x.qty=l.qty}if(l.area&&l.area!==x.area){x.note=(x.note?x.note+"; ":"")+`Renamed to "${l.area}" on ${j.date}`;x.area=l.area}}}});
- // the timeclock register also carries forward for future visits
- S.tc=j.tc.filter(t=>!t.removed&&(t.loc||t.group)).map(t=>({id:t.id,sb:t.sb,loc:t.loc,group:t.group,on:t.on,off:t.off}));
  j.status="Submitted";save();
  if(WEBHOOK){fetch(WEBHOOK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(exportPayload(j))}).then(()=>toast("Submitted and sent to Airtable via n8n.")).catch(()=>toast("Submitted here, but the n8n webhook could not be reached."))}
  else{toast("Submitted. Register updated for future visits.")}
  go("report",{jid:j.id})}
-function exportPayload(j){return{job:{jobNumber:j.num,client:CLIENT,site:SITE,technician:j.tech,date:j.date,status:j.status,overallCondition:j.cond},
- generalMaintenance:SBS.flatMap(s=>j.gm[s.id].map((g,i)=>({switchboard:s.id,check:CHECKS[i],result:g.r,comment:g.c}))),
+function exportPayload(j){return{job:{jobNumber:j.num,client:j.client,site:j.site,technician:j.tech,date:j.date,status:j.status,overallCondition:j.cond},
+ generalMaintenance:j.sbs.flatMap(s=>j.gm[s.id].map((g,i)=>({switchboard:s.id,check:CHECKS[i],result:g.r,comment:g.c}))),
  itemResults:j.lines.map(l=>({switchboard:l.sb,area:l.area,item:lbl(l),qty:l.qty,result:l.r,comment:l.c,addedOnSite:!!l.added,removedOnSite:!!l.removed})),
+ boardComments:j.sbs.filter(s=>(j.bc[s.id]||"").trim()).map(s=>({switchboard:s.id,comment:j.bc[s.id].trim()})),
  timeclocks:[]}} // Timeclocks retired from this form — always sent empty so n8n's Timeclock Results step simply does nothing
 function copyJson(){const t=JSON.stringify(exportPayload(J(S.jid)),null,1);
  try{navigator.clipboard.writeText(t).then(()=>toast("Copied — paste into an n8n Manual trigger to test your mapping."))}
  catch(e){toast("Copy not available in this browser context")}}
 /* ---------- Admin ---------- */
-function vAdmin(){let h=`<h2>Jobs &amp; scheduling</h2><div class="card row"><b>New PMWT booking</b><span class="soft">${CLIENT} — ${SITE}</span><input type="date" id="jd" style="width:150px" value="2026-11-02"><select id="jt" style="width:150px">${TECH.map(t=>`<option>${t}</option>`).join("")}</select><button class="btn" onclick="addJob()">Create job &amp; allocate</button></div>`;
- S.jobs.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(j=>h+=`<div class="card row sp"><div><span class="mono">${j.num}</span> · ${j.date} · ${j.tech}</div><div class="row"><span class="badge b-${j.status.replace(/ /g,"")}">${j.status}</span>${["Submitted","Report Issued"].includes(j.status)?`<button class="btn s" onclick="go('report',{jid:'${j.id}'})">Report</button>`:""}<button class="btn s" style="background:#b42318;color:#fff" title="Delete this job" onclick="deleteJob('${j.id}')">Delete</button></div></div>`);
+function vAdmin(){const nj=S.nj=S.nj||{client:"",site:""};
+ const cl=DB.clients.find(c=>c.name===nj.client);const st=cl&&cl.sites.find(s=>s.name===nj.site);
+ let h=`<h2>Jobs &amp; scheduling</h2><div class="card"><div class="row sp"><b>New PMWT booking</b><span class="badge" title="${SRC==="live"?"Clients and sites were just read from Airtable":"Could not reach Airtable, showing the built-in snapshot"}">${SRC==="live"?"● Live from Airtable":"○ Offline snapshot"}</span></div>
+ <div class="row" style="margin-top:10px"><select id="jc" style="width:190px" onchange="pickClient(this.value)"><option value="">1. Select client…</option>${DB.clients.map(c=>`<option ${c.name===nj.client?"selected":""}>${esc(c.name)}</option>`).join("")}</select>
+ <select id="js" style="width:190px" ${cl?"":"disabled"} onchange="pickSite(this.value)"><option value="">2. Select site…</option>${cl?cl.sites.map(s=>`<option ${s.name===nj.site?"selected":""}>${esc(s.name)}</option>`).join(""):""}</select></div>
+ ${st?`<div class="note">Job <b class="mono">${nextNum()}</b> will be created for <b>${esc(nj.client)} — ${esc(nj.site)}</b> with <b>${st.boards.length} switchboard${st.boards.length===1?"":"s"}</b>: ${st.boards.map(b=>`${b.id} (${esc(b.loc)}, ${b.items.length} item lines)`).join(" · ")}. The technician's form is filled from these boards' registers.</div>`:`<p class="soft" style="margin:10px 0 0">Choose a client, then one of that client's sites.</p>`}
+ <div class="row" style="margin-top:10px"><input type="date" id="jd" style="width:150px" value="${new Date().toISOString().slice(0,10)}"><select id="jt" style="width:170px">${techs().map(t=>`<option>${esc(t)}</option>`).join("")}</select><button class="btn" ${st?"":"disabled"} onclick="addJob()">Create job &amp; allocate</button></div></div>`;
+ S.jobs.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(j=>h+=`<div class="card row sp"><div><span class="mono">${j.num}</span> · ${esc(j.client)} — ${esc(j.site)} · ${j.date} · ${j.tech}<div class="soft">${j.sbs.length} switchboard${j.sbs.length===1?"":"s"}: ${j.sbs.map(s=>s.id).join(", ")}</div></div><div class="row"><span class="badge b-${j.status.replace(/ /g,"")}">${j.status}</span>${["Submitted","Report Issued"].includes(j.status)?`<button class="btn s" onclick="go('report',{jid:'${j.id}'})">Report</button>`:""}<button class="btn s" style="background:#b42318;color:#fff" title="Delete this job" onclick="deleteJob('${j.id}')">Delete</button></div></div>`);
  const act=S.reg.filter(r=>r.active).length;
- return h+`<p class="soft">Register: ${act} active items across ${SBS.length} switchboards (${S.reg.length-act} retired, kept for history) · ${S.tc.length} active timeclocks.</p>
- <div class="card"><b>Connecting to Airtable</b><p class="soft" style="margin-top:6px">This demo keeps its data in the browser only. To have every submission write into your Airtable base, point <span class="mono">WEBHOOK</span> near the top of this page's code at an n8n Webhook node, then add Airtable nodes after it for Jobs, General Maintenance Results, Item Results and Timeclock Results. Until then, use "Copy inspection data (JSON)" on any submitted report to test your n8n mapping by hand.</p></div>
- <div class="card"><b>Reset demo data</b><p class="soft" style="margin-top:6px">Clears every job, register item and timeclock stored in this browser and starts fresh with the original seed data — use this before a client demo so old test submissions don't show up. This only affects what's saved on this device; it does not touch anything already sent to Airtable.</p><button class="btn" style="margin-top:8px;background:#b42318" onclick="resetDemo()">Reset demo data</button></div>`}
-function resetDemo(){if(!confirm("This clears all jobs and history saved in this browser and starts over with fresh demo data. Continue?"))return;localStorage.removeItem("fo3");location.reload()}
+ return h+`<p class="soft">Register held in this browser: ${act} active items across ${new Set(S.reg.map(r=>r.sb)).size} switchboards (${S.reg.length-act} retired, kept for history).</p>
+ <div class="card"><b>Connecting to Airtable</b><p class="soft" style="margin-top:6px">Clients, sites, switchboards and register items are read live from Airtable through a read-only n8n workflow (<span class="mono">CATALOG_URL</span>), and each submitted inspection is sent back through <span class="mono">WEBHOOK</span>. If Airtable cannot be reached, the page falls back to a built-in snapshot and the badge above shows "Offline snapshot".</p></div>
+ <div class="card"><b>Reset demo data</b><p class="soft" style="margin-top:6px">Clears every job and register copy stored in this browser and starts fresh with the original seed data, then re-reads the catalog from Airtable — use this before a client demo so old test submissions don't show up. It does not touch anything already sent to Airtable.</p><button class="btn" style="margin-top:8px;background:#b42318" onclick="resetDemo()">Reset demo data</button></div>`}
+const pickClient=v=>{S.nj={client:v,site:""};render()};
+const pickSite=v=>{S.nj.site=v;render()};
+function resetDemo(){if(!confirm("This clears all jobs and history saved in this browser and starts over with fresh demo data. Continue?"))return;localStorage.removeItem("fo4");location.reload()}
 function deleteJob(id){const j=J(id);if(!j)return;if(!confirm(`Delete job ${j.num} (${j.date})? This only removes it from this browser's demo data — it does NOT delete anything already sent to Airtable. Delete dummy/test jobs there separately in Airtable itself.`))return;S.jobs=S.jobs.filter(x=>x.id!==id);save();render();toast("Job deleted from this browser's demo data.")}
-function addJob(){const n=1+Math.max(...S.jobs.map(j=>+j.num.slice(-4)));S.jobs.push({id:"j"+Date.now(),num:"PMWT-2026-"+String(n+1).padStart(4,"0"),date:$("jd").value,tech:$("jt").value,status:"Scheduled",lines:[],gm:{},bc:{},cond:null,tc:[]});save();render();toast("Job created. The technician sees it on their list.")}
-function vHist(){const sb=S.hsb;let h=`<h2>Switchboard history</h2><div class="row"><span class="soft">Switchboard</span><select style="width:140px" onchange="S.hsb=this.value;render()">${SBS.map(s=>`<option ${s.id===sb?"selected":""}>${s.id}</option>`).join("")}</select></div>`;
+function addJob(){const nj=S.nj||{};const st=findSite(nj.client,nj.site);if(!st){toast("Select a client and a site first.");return}
+ const j=newJob("j"+Date.now(),nextNum(),$("jd").value,$("jt").value,nj.client,nj.site,S.reg);S.jobs.push(j);save();render();toast(`Job ${j.num} created with ${j.sbs.length} switchboard${j.sbs.length===1?"":"s"}. The technician sees it on their list.`)}
+function vHist(){const sb=S.hsb;const ids=allBoardIds();let h=`<h2>Switchboard history</h2><div class="row"><span class="soft">Switchboard</span><select style="width:140px" onchange="S.hsb=this.value;render()">${ids.map(s=>`<option ${s===sb?"selected":""}>${s}</option>`).join("")}</select></div>`;
  h+=`<h3 class="sec">Register (what is connected now, and what changed)</h3><table><tr><th>Area</th><th>Item</th><th>Qty</th><th>Status</th><th>Added</th><th>Removed</th><th>Note</th></tr>${S.reg.filter(r=>r.sb===sb).sort((a,b)=>a.line-b.line).map(r=>`<tr style="${r.active?"":"opacity:.55"}"><td>${esc(r.area)}</td><td>${lbl(r)}</td><td>${r.qty}</td><td>${r.active?"Active":"Retired"}</td><td>${r.added}</td><td>${r.removed||"—"}</td><td class="soft">${r.note}</td></tr>`).join("")}</table>`;
- h+=`<h3 class="sec">Timeclocks on this board</h3><table><tr><th>Location</th><th>Switch group</th><th>Time on</th><th>Time off</th></tr>${S.tc.filter(t=>t.sb===sb).map(t=>`<tr><td>${esc(t.loc)}</td><td>${esc(t.group)}</td><td>${esc(t.on)}</td><td>${esc(t.off)}</td></tr>`).join("")||'<tr><td colspan="4" class="soft">N/A</td></tr>'}</table>`;
- S.jobs.filter(j=>["Submitted","Report Issued"].includes(j.status)).sort((a,b)=>b.date.localeCompare(a.date)).forEach(j=>{
+ S.jobs.filter(j=>["Submitted","Report Issued"].includes(j.status)&&j.gm[sb]).sort((a,b)=>b.date.localeCompare(a.date)).forEach(j=>{
   h+=`<div class="card"><div class="row sp"><b>${j.date}</b> <span class="badge">${j.cond||"—"}</span><span class="soft">${j.num} · ${j.tech}</span></div><div style="margin:8px 0">${j.gm[sb].map((g,i)=>`<span class="chip ${g.r==="Yes"?"Y":"N"}" title="${esc(g.c)}">${CHECKS[i].split(" ").slice(0,3).join(" ")}: ${g.r}</span>`).join("")}</div>
   <table><tr><th>Area</th><th>Item (as at this visit)</th><th>Qty</th><th>Result</th><th>Comment</th></tr>${lines(j,sb).map(l=>`<tr><td>${esc(l.area)}</td><td>${lbl(l)}${l.added?'<span class="tag tnew">NEW</span>':""}${l.removed?'<span class="tag trem">REMOVED</span>':""}</td><td>${l.qty}</td><td>${l.r}</td><td class="soft">${esc(l.c)}</td></tr>`).join("")}</table></div>`});
  return h}
-function defects(){const d=[];S.jobs.filter(j=>["Submitted","Report Issued"].includes(j.status)).forEach(j=>SBS.forEach(s=>{j.gm[s.id].forEach((g,i)=>g.r==="No"&&d.push({j,sb:s.id,t:CHECKS[i],c:g.c}));lines(j,s.id).forEach(l=>l.r==="Defective"&&d.push({j,sb:s.id,t:esc(l.area)+" — "+lbl(l)+" x"+l.qty,c:l.c}))}));return d}
+function defects(){const d=[];S.jobs.filter(j=>["Submitted","Report Issued"].includes(j.status)).forEach(j=>j.sbs.forEach(s=>{j.gm[s.id].forEach((g,i)=>g.r==="No"&&d.push({j,sb:s.id,t:CHECKS[i],c:g.c}));lines(j,s.id).forEach(l=>l.r==="Defective"&&d.push({j,sb:s.id,t:esc(l.area)+" — "+lbl(l)+" x"+l.qty,c:l.c}))}));return d}
 function vDef(){const d=defects();return`<h2>Defect register</h2><p class="soft">Raised automatically from every "No" (Part 1) and "Defective" (Part 2), across all visits.</p><table><tr><th>Visit</th><th>Board</th><th>Item</th><th>Comment</th></tr>${d.map(x=>`<tr><td class="mono">${x.j.date}<br>${x.j.num}</td><td>${x.sb}</td><td>${x.t}</td><td>${esc(x.c)}</td></tr>`).join("")||'<tr><td colspan="4">None</td></tr>'}</table>`}
-/* ---------- Report ---------- */
 function vReport(){const j=J(S.jid);let h=`<div class="row no-print" style="margin-bottom:12px"><button class="btn s" onclick="go('${S.role==="tech"?"jobs":"admin"}')">← Back</button><button class="btn" onclick="print()">🖨 Print / Save as PDF</button><button class="btn s" onclick="copyJson()">Copy inspection data (JSON)</button></div><div id="rep">
  <div class="orange"><h2>PREVENTATIVE MAINTENANCE<br>INSPECTION REPORT ${j.date}</h2></div>
- <p><b>SITE NAME</b> ${SITE} &nbsp; <b>CLIENT</b> ${CLIENT} &nbsp; <b>SERVICE JOB #</b> ${j.num} &nbsp; <b>TECHNICIAN</b> ${j.tech}</p>
+ <p><b>SITE NAME</b> ${esc(j.site)} &nbsp; <b>CLIENT</b> ${esc(j.client)} &nbsp; <b>SERVICE JOB #</b> ${j.num} &nbsp; <b>TECHNICIAN</b> ${j.tech}</p>
  <p><b>OVERALL CONDITION OF ELECTRICAL SYSTEM:</b> ${CONDS.map(c=>c===j.cond?`<span style="background:#FFD966;padding:2px 8px;font-weight:700">✓ ${c}</span>`:`<span class="soft">${c}</span>`).join(" &nbsp; ")}</p>`;
- SBS.forEach(s=>{const tc=j.tc.filter(t=>t.sb===s.id&&!t.removed);
+ j.sbs.forEach(s=>{
  h+=`<hr><p><b>SWITCHBOARD NAME:</b> ${s.id} &nbsp; <b>LOCATION:</b> ${s.loc}</p>
- <h4>TIMECLOCKS</h4><table><tr><th>Location</th><th>Switch Group</th><th>Time On</th><th>Time Off</th></tr>${tc.length?tc.map(t=>`<tr><td>${esc(t.loc)}</td><td>${esc(t.group)}</td><td>${esc(t.on)}</td><td>${esc(t.off)}</td></tr>`).join(""):'<tr><td colspan="4">N/A</td></tr>'}</table>
  <h4>GENERAL MAINTENANCE</h4><table><tr><th>Check</th><th>YES/NO</th><th>Comments</th></tr>${j.gm[s.id].map((g,i)=>`<tr><td>${CHECKS[i]}</td><td style="background:${g.r==="Yes"?"#E2EFDA":"#FFD966"}">${g.r}</td><td>${g.r==="No"?"See comments: ":""}${esc(g.c)}</td></tr>`).join("")}</table>
  <h4>INSPECTION REPORT</h4><table><tr><th>Area</th><th>Item</th><th>Operational (Yes/No)</th><th>Issues</th><th>Action</th></tr>${lines(j,s.id).map(l=>{const na=l.r==="N/A";return`<tr${l.removed?' style="opacity:.6"':""}><td>${esc(l.area)}</td><td>${lbl(l)} x${l.qty}${l.added?" (new)":""}${l.removed?" (removed)":""}</td><td>${na?"N/A":l.r==="Defective"?"No":"Yes"}</td><td>${na?"N/A":l.r==="No issues"?"No Issues":l.r}</td><td>${l.c?esc(l.c):"N/A"}</td></tr>`}).join("")}</table>
  <h4>COMMENTS</h4><p class="soft">${esc(j.bc[s.id])||"—"}</p>`});return h+"</div>"}
@@ -214,7 +224,9 @@ function render(){const t=S.role==="tech";$("rt").classList.toggle("on",t);$("ra
  const items=t?[["jobs","My jobs"]]:[["admin","Jobs & scheduling"],["hist","Switchboard history"],["def","Defect register"]];
  $("nav").innerHTML=items.map(([k,l])=>`<button class="${S.view===k||(k==="jobs"&&S.view==="form")?"on":""}" onclick="go('${k}')">${l}</button>`).join("");
  $("v").innerHTML={jobs:vJobs,form:vForm,admin:vAdmin,hist:vHist,def:vDef,report:vReport}[S.view]();
+ $("src").textContent=SRC==="live"?"● Airtable: live":"○ Airtable: offline snapshot";
  if($("nt"))fillSub();save()}
+function loadCatalog(){if(!CATALOG_URL)return;fetch(CATALOG_URL,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{if(!d||!d.clients||!d.clients.length)throw 0;DB=fromLive(d);SRC="live";if(S.view==="admin"||S.view==="jobs")render();else $("src").textContent="● Airtable: live"}).catch(()=>{})}
 document.getElementById("companyName").textContent=COMPANY;
-render();
+render();loadCatalog();
 </script></body></html>
