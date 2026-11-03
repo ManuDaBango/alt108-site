@@ -3,118 +3,186 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Asset tracker demo | alt108</title>
-  <meta name="description" content="Try a live asset tracker: report an asset by web form, Telegram or email and watch it land in the register.">
+  <title>Asset tracker demo · alt108</title>
+  <meta name="description" content="Try a live asset tracker: send a photo of an asset by WhatsApp, Telegram, email or web form and watch the register update.">
+  <!-- "../" means "go up one folder", because this page sits inside its own folder -->
   <link rel="icon" href="../images/favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 
+<!-- HEADER: same as the main page, but links point back to it with ../ -->
 <header class="site-header">
   <div class="wrap">
     <a class="logo" href="../">alt<span>108</span></a>
-    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
     <nav class="menu">
       <a href="../#demos">All demos</a>
       <a href="../#pricing">Pricing</a>
       <a href="../#about">About</a>
-      <a class="btn btn-primary" href="../#contact">Free strategy session</a>
+      <a class="btn-orange" href="../#contact">Free strategy session</a>
     </nav>
   </div>
 </header>
 
 <main>
 
-<!-- 1 + 2. TITLE, PROMISE AND PROBLEM -->
-<section class="demo-hero">
+<!-- =================================================================
+     DEMO PAGE LAYOUT (the same blocks on every demo page)
+       1. Title tile + number tile   2. Try it
+       3. Walkthrough video          4. What it could do for you
+       5. Built with + button
+     ================================================================= -->
+
+<!-- 1. TITLE TILE + NUMBER TILE -->
+<section>
   <div class="wrap">
     <div class="crumb"><a href="../#demos">← All demos</a></div>
-    <span class="label">Demo · Asset tracker</span>
-    <h1>Let the people who see your assets keep the register up to date.</h1>
-    <p class="lead">
-      A waste management company's register is missing hundreds of skip and bulk bins worth about
-      $10,000 each. Updating it is nobody's job. This app makes reporting an asset take seconds.
-    </p>
-  </div>
-</section>
-
-<!-- 3. TRY IT -->
-<section>
-  <div class="wrap">
-    <h2>Try it</h2>
-    <p>Report an asset with the web form and watch it arrive in the register. The review step catches duplicates and errors before they reach the register. Either fill in the form below or simple send a photo to Telegram ID: @demo_ass_track_bot</p>
-    <p class="note">This is a demo with made-up data. </p>
-
-    <div class="split">
-      <div class="panel">
-        <div class="panel-head">
-          <span>The app</span>
-          <a href="https://asset-tracker-4w67.onrender.com" target="_blank" rel="noopener">Open full screen ↗</a>
-        </div>
-        <!-- The app runs on Render. If this box ever shows blank, visitors can still use
-             the "Open full screen" link above. Render's paid plan keeps it awake. -->
-        <iframe src="https://asset-tracker-4w67.onrender.com" title="Asset tracker demo app"></iframe>
+    <div class="demo-hero-grid">
+      <div class="tile dark">
+        <span class="chip">Featured demo · Asset tracker</span>
+        <h1 style="margin-top:18px">Let the people who see your assets keep the register up to date.</h1>
+        <p class="lead">
+          Nobody updates the asset register. Important photos sit on people's phones and never reach
+          the company. This app makes reporting an asset take seconds: send a photo, and AI reads the
+          label, barcode or asset number tag.
+        </p>
       </div>
-
-      <div class="panel">
-        <div class="panel-head">
-          <span>The register (read-only)</span>
-          <a href="#" id="refresh-register">Refresh ↻</a>
-        </div>
-        <!-- TO ADD THE AIRTABLE VIEW: in Airtable, open the asset table's view,
-             click Share view, copy the link (it starts https://airtable.com/app.../shr...),
-             add "/embed" after "airtable.com", then replace the placeholder <div> below with:
-             <iframe src="https://airtable.com/embed/appXXXX/shrXXXX" title="Asset register (read-only)"></iframe> -->
-             <iframe id="register-frame" src="https://airtable.com/embed/appFFZYk06GOEXjhF/shruLtRsIKXAQRgYO" title="Asset register (read-only)"></iframe> 
-        <!-- <div class="placeholder">The live register view will appear here.</div> -->
+      <div class="tile stat">
+        <span>Pays for itself</span>
+        <span class="big-number">~$10,000</span>
+        <span>per missing bin. A waste company's register is missing hundreds of them. Finding even a few pays for the app many times over.</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- 4. WALKTHROUGH VIDEO (see inspector/index.html for how to paste a video) -->
-<section class="alt">
+<!-- 2. TRY IT: the app on the left, the register on the right -->
+<section>
   <div class="wrap">
-    <h2>Rather watch? 60-second walkthrough</h2>
-    <div class="video-box panel">
-      <div class="placeholder" style="height:100%">Walkthrough video coming soon</div>
+    <div class="tile">
+      <h2>Try it</h2>
+      <p>Report an asset with the web form and watch it arrive in the register. The review step catches duplicates and errors before they reach the register. Either fill in the form below or simply send a photo to Telegram ID: <b>@demo_ass_track_bot</b></p>
+      <p class="note">This is a demo with made-up data.</p>
+
+      <div class="split">
+        <div class="panel">
+          <div class="panel-head">
+            <span>The app</span>
+            <a href="https://asset-tracker-4w67.onrender.com" target="_blank" rel="noopener">Open full screen ↗</a>
+          </div>
+          <!-- The app runs on Render. If this box ever shows blank, visitors can still use
+               the "Open full screen" link above. Render's paid plan keeps it awake. -->
+          <iframe src="https://asset-tracker-4w67.onrender.com" title="Asset tracker demo app"></iframe>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span>The register (read-only)</span>
+            <a href="#" id="refresh-register">Refresh ↻</a>
+          </div>
+          <!-- Airtable read-only shared view. To change it: in Airtable click Share view,
+               copy the link, and put "/embed" right after "airtable.com" -->
+          <iframe id="register-frame" src="https://airtable.com/embed/appFFZYk06GOEXjhF/shruLtRsIKXAQRgYO" title="Asset register (read-only)"></iframe>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- 5. WHAT IT COULD DO FOR YOU -->
+<!-- 2b. BEHIND THE SCENES: the workflow picture.
+     It's a drawing made of code (SVG). To change a word, find it
+     between <text ...> and </text> and type over it. -->
+<section>
+  <div class="wrap workflow-grid">
+    <div class="tile dark">
+      <h2>What happens behind the scenes</h2>
+      <p class="lead">Nobody has to open the register. The automation does the boring part, around the clock.</p>
+      <ol class="steps-list">
+        <li><b style="color:#fff">A photo comes in</b> by WhatsApp, Telegram, email or the web form. No app to download.</li>
+        <li><b style="color:#fff">AI reads the photo</b> and pulls out the asset number from the label, barcode or tag.</li>
+        <li><b style="color:#fff">n8n checks the register</b> to see if the asset is new, moved or a duplicate.</li>
+        <li><b style="color:#fff">A person approves it</b> with one tap, and the database updates.</li>
+        <li><b style="color:#fff">Reports go out</b> on their own: an Excel report for the office, a Telegram alert for the manager.</li>
+      </ol>
+    </div>
+    <div class="tile flush">
+      <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Workflow: WhatsApp photo, AI reads the bin number, n8n checks the register, database updated, then an Excel report and a Telegram alert">
+        <text x="150" y="22" font-family="Onest, sans-serif" font-weight="600" font-size="10" fill="#7A828C" text-anchor="middle">RUNS BY ITSELF, 24/7</text>
+        <!-- connecting lines -->
+        <g stroke="#FF5A1F" stroke-width="2" fill="none">
+          <path d="M150 80 V108"/><path d="M150 150 V178"/><path d="M150 220 V248"/>
+          <path d="M150 290 C150 310, 75 305, 75 328"/><path d="M150 290 C150 310, 225 305, 225 328"/>
+        </g>
+        <g fill="#FF5A1F"><circle cx="150" cy="94" r="3.5"/><circle cx="150" cy="164" r="3.5"/><circle cx="150" cy="234" r="3.5"/></g>
+        <!-- the steps -->
+        <g font-family="Onest, sans-serif" font-weight="600" font-size="12">
+          <rect x="45" y="38" width="210" height="42" rx="14" fill="#14171C"/>
+          <circle cx="68" cy="59" r="8" fill="#FF5A1F"/><text x="84" y="63" fill="#fff">WhatsApp photo of a bin</text>
+          <rect x="45" y="108" width="210" height="42" rx="14" fill="#fff" stroke="#FF5A1F" stroke-width="2"/>
+          <circle cx="68" cy="129" r="8" fill="#FF5A1F" opacity=".25"/><text x="84" y="133" fill="#14171C">AI reads the bin number</text>
+          <rect x="45" y="178" width="210" height="42" rx="14" fill="#F1F3F5" stroke="#D5DAE0"/>
+          <circle cx="68" cy="199" r="8" fill="#14171C" opacity=".15"/><text x="84" y="203" fill="#14171C">n8n checks the register</text>
+          <rect x="45" y="248" width="210" height="42" rx="14" fill="#F1F3F5" stroke="#D5DAE0"/>
+          <circle cx="68" cy="269" r="8" fill="#14171C" opacity=".15"/><text x="84" y="273" fill="#14171C">Database updated</text>
+          <rect x="20" y="328" width="110" height="40" rx="14" fill="#E7EAEE"/><text x="75" y="352" fill="#14171C" text-anchor="middle">Excel report</text>
+          <rect x="170" y="328" width="110" height="40" rx="14" fill="#FF5A1F"/><text x="225" y="352" fill="#fff" text-anchor="middle">Telegram alert</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 3. WALKTHROUGH VIDEO
+     When your video is ready (YouTube or Loom), delete the placeholder <div>
+     and paste the video's embed code inside <div class="video-box">. Example:
+     <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" title="Walkthrough" allowfullscreen></iframe> -->
 <section>
   <div class="wrap">
-    <h2>What this could do for your business</h2>
+    <div class="tile">
+      <h2>Rather watch? 60-second walkthrough</h2>
+      <div class="video-box panel">
+        <div class="placeholder">Walkthrough video coming soon</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. WHAT IT COULD DO FOR YOU -->
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>What this could do for your business</h2></div>
     <div class="facts">
-      <div class="fact">
+      <div class="tile">
         <h3>Report from wherever you are</h3>
-        <p>A sales rep on site, a client or an auditor can send an asset by Telegram, email or web form.</p>
+        <p>A sales rep on site, a client or an auditor can send an asset by WhatsApp, Telegram, email or web form.</p>
       </div>
-      <div class="fact">
+      <div class="tile">
         <h3>A register people trust</h3>
         <p>A review step stops duplicates and mistakes, so the register stays reliable over time.</p>
       </div>
-      <div class="fact">
-        <h3>Anything that goes missing</h3>
-        <p>Equipment, vehicles, tools or stock: if it goes missing on paper, it can be tracked this way.</p>
+      <div class="tile">
+        <h3>Lists that finally match</h3>
+        <p>The same idea works for docket vs invoice, timesheet vs job card, or quoted vs completed work.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- 6. BUILT WITH + CALL TO ACTION -->
-<section class="cta-band">
+<!-- 5. BUILT WITH + CALL TO ACTION -->
+<section>
   <div class="wrap">
-    <p class="label" style="color:var(--soft)">Built with</p>
-    <ul class="built-with" style="justify-content:center">
-      <li>Airtable</li><li>n8n</li><li>Telegram</li><li>Render</li><li>Claude Code</li>
-    </ul>
-    <h2 style="margin-top:32px">Want one like this for your team?</h2>
-    <div class="btn-row">
-      <a class="btn btn-primary" href="../#contact">Book a free strategy session</a>
-      <a class="btn btn-dark" href="../#demos">See other demos</a>
+    <div class="tile dark cta-tile">
+      <p style="margin:0;color:var(--soft-on-dark)">Built with</p>
+      <ul class="built-with">
+        <li>Airtable</li><li>n8n</li><li>Telegram</li><li>Render</li><li>Claude Code</li>
+      </ul>
+      <h2>Want one like this for your team?</h2>
+      <div class="btn-row">
+        <a class="btn btn-orange" href="../#contact">Book a free strategy session</a>
+        <a class="btn btn-white" href="../#demos">See other demos</a>
+      </div>
     </div>
   </div>
 </section>
