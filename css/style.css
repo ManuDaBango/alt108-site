@@ -189,7 +189,7 @@ section { padding: 40px 0; scroll-margin-top: 80px; }
 .outcomes li { border: 1.5px solid #3E444D; border-radius: 999px; padding: 12px 22px; font: 700 clamp(1rem, 1.8vw, 1.25rem)/1 var(--font-head); letter-spacing: -0.02em; }
 .outcomes li:nth-child(odd) { background: var(--orange); border-color: var(--orange); }
 
-/* 5.6 HOW IT WORKS: three step tiles + guarantee tile */
+/* 5.6 Pricing: three step tiles + guarantee tile */
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
 .step { display: flex; flex-direction: column; gap: 6px; }
 .step .num { font: 800 3rem/1 var(--font-head); color: var(--orange); letter-spacing: -0.04em; margin-bottom: 18px; }
