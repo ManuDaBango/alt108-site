@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game of Frueets · alt108</title>
+  <meta name="description" content="A 1960s slot machine rebuilt as a multiplayer web game in one day. Proof that complex apps can be built fast.">
+  <!-- "../" means "go up one folder", because this page sits inside its own folder -->
+  <link rel="icon" href="../images/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<!-- HEADER: same as the main page, but links point back to it with ../ -->
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="../">alt<span>108</span></a>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
+    <nav class="menu">
+      <a href="../#demos">All demos</a>
+      <a href="../#how">How it works</a>
+      <a href="../#about">About</a>
+      <a class="btn-orange" href="../#contact">Free strategy session</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- =================================================================
+     DEMO PAGE LAYOUT (the same blocks on every demo page)
+       1. Title tile + number tile   2. Try it
+       3. Walkthrough video          4. What it could do for you
+       5. Built with + button
+     ================================================================= -->
+
+<!-- 1. TITLE TILE + NUMBER TILE -->
+<section>
+  <div class="wrap">
+    <div class="crumb"><a href="../#demos">← All demos</a></div>
+    <div class="demo-hero-grid">
+      <div class="tile dark">
+        <span class="chip">Demo · Game of Frueets</span>
+        <h1 style="margin-top:18px">Too complex to build? Not any more.</h1>
+        <p class="lead">
+          A 1960s mechanical slot machine, converted into a multiplayer game you play with friends.
+          We build apps that only exist in your imagination today.
+        </p>
+        <div class="btn-row" style="margin-top:22px">
+          <!-- The game lives at alt108.com/frueets/ and opens in a new tab -->
+          <a class="btn btn-orange" href="https://www.alt108.com/frueets/" target="_blank" rel="noopener">Play Game of Frueets ↗</a>
+        </div>
+      </div>
+      <div class="tile stat">
+        <span>Time to build</span>
+        <span class="big-number">1 day</span>
+        <span>A year ago, a game like this needed a team and took months.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. HOW TO PLAY -->
+<section>
+  <div class="wrap">
+    <div class="tile">
+      <h2>How to play</h2>
+      <p class="lead">Press the lever and drop the ball into the same fruit slot 3 times.</p>
+      <p>3 bells pay the most and the star is a wild card. Not all fruits are equal: the payout list is under the menu button.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3. WHY A GAME IS ON A BUSINESS WEBSITE -->
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>Why a game is on a business website</h2></div>
+    <div class="facts">
+      <div class="tile">
+        <h3>Complex logic</h3>
+        <p>Players, turns, payouts and wild cards all have to stay correct. Business apps need the same care with jobs, stock and money.</p>
+      </div>
+      <div class="tile">
+        <h3>A rules engine</h3>
+        <p>If an app can follow every rule of a game, it can follow every rule in your award, roster or contract.</p>
+      </div>
+      <div class="tile">
+        <h3>Built end to end</h3>
+        <p>Design, code, hosting and updates, all done by one person with AI assistance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. CALL TO ACTION
+     To add a "Built with" list, copy the <ul class="built-with"> block
+     from another demo page and change the tools. -->
+<section>
+  <div class="wrap">
+    <div class="tile dark cta-tile">
+      <h2>Got an idea that seems too complex?</h2>
+      <div class="btn-row">
+        <a class="btn btn-orange" href="../#contact">Book a free strategy session</a>
+        <a class="btn btn-white" href="../#demos">See other demos</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© <span class="year"></span> alt108 · Perth, Western Australia</span>
+    <span><a href="mailto:manu@alt108.com">manu@alt108.com</a> · <a href="tel:+61400004414">0400 004 414</a></span>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

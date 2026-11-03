@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI receptionist demo · alt108</title>
+  <meta name="description" content="Call a live AI voice receptionist that knows the business, talks naturally and passes urgent calls straight on.">
+  <!-- "../" means "go up one folder", because this page sits inside its own folder -->
+  <link rel="icon" href="../images/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<!-- HEADER: same as the main page, but links point back to it with ../ -->
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="../">alt<span>108</span></a>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
+    <nav class="menu">
+      <a href="../#demos">All demos</a>
+      <a href="../#how">How it works</a>
+      <a href="../#about">About</a>
+      <a class="btn-orange" href="../#contact">Free strategy session</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- =================================================================
+     DEMO PAGE LAYOUT (the same blocks on every demo page)
+       1. Title tile + number tile   2. Try it
+       3. Walkthrough video          4. What it could do for you
+       5. Built with + button
+     ================================================================= -->
+
+<!-- 1. TITLE TILE + NUMBER TILE -->
+<section>
+  <div class="wrap">
+    <div class="crumb"><a href="../#demos">← All demos</a></div>
+    <div class="demo-hero-grid">
+      <div class="tile dark">
+        <span class="chip">Demo · AI receptionist</span>
+        <h1 style="margin-top:18px">Never miss a call again, even when everyone's on the tools.</h1>
+        <p class="lead">
+          "We're understaffed. We can't find the right people, and when we do they're too expensive or they quit."
+          This voice agent answers the phone, knows the business, has a natural conversation and
+          passes urgent calls straight on.
+        </p>
+      </div>
+      <div class="tile stat">
+        <span>Always answering</span>
+        <span class="big-number">24/7</span>
+        <span>It runs day and night, and never misses a call.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. TRY IT: call the demo.
+     To change the number, edit both the tel: link (+61 format, no spaces
+     or leading 0) and the words you can see. It's on the home page demo card too. -->
+<section>
+  <div class="wrap demo-hero-grid">
+    <div class="tile orange">
+      <h2>Try it: give it a call</h2>
+      <p>Ring the number below from any phone. The agent knows alt108's services and will talk with you like a receptionist would.</p>
+      <a class="call-id" href="tel:+61495102009" style="color:#fff;text-decoration:none">0495 102 009</a>
+      <p style="margin-top:12px">Urgent enquiries reach Manu straight away. Everything else is logged for follow-up.</p>
+    </div>
+    <div class="tile">
+      <h3>Things to ask it</h3>
+      <ul class="steps-list">
+        <li>"What does alt108 do?"</li>
+        <li>"How much does a small app cost?"</li>
+        <li>"Can I book a free strategy session?"</li>
+        <li>"It's urgent, I need to talk to Manu today."</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3. HOW IT WORKS -->
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>How it works</h2></div>
+    <div class="facts">
+      <div class="tile">
+        <h3>It answers like a person</h3>
+        <p>A natural voice that listens, asks follow-up questions and doesn't read from a script.</p>
+      </div>
+      <div class="tile">
+        <h3>It knows your business</h3>
+        <p>Services, prices, opening hours and common questions, all loaded in before it goes live.</p>
+      </div>
+      <div class="tile">
+        <h3>It sorts the calls</h3>
+        <p>Urgent calls go straight to the right person. The rest are written up and logged, so nothing is lost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. WHAT IT COULD DO FOR YOU -->
+<section>
+  <div class="wrap">
+    <div class="tile dark">
+      <h2>One part of a virtual employee</h2>
+      <p class="lead">The receptionist is one small AI agent with one narrow job. Pick a few agents and together they become an assistant that runs around the clock:</p>
+      <ul class="outcomes">
+        <li>After-hours calls</li>
+        <li>Booking requests</li>
+        <li>Quote enquiries</li>
+        <li>Common questions</li>
+        <li>Call notes and follow-ups</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5. BUILT WITH + CALL TO ACTION -->
+<section>
+  <div class="wrap">
+    <div class="tile dark cta-tile">
+      <p style="margin:0;color:var(--soft-on-dark)">Built with</p>
+      <ul class="built-with">
+        <li>Vapi voice AI</li><li>n8n</li>
+      </ul>
+      <h2>Which calls does your team miss?</h2>
+      <div class="btn-row">
+        <a class="btn btn-orange" href="../#contact">Book a free strategy session</a>
+        <a class="btn btn-white" href="../#demos">See other demos</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© <span class="year"></span> alt108 · Perth, Western Australia</span>
+    <span><a href="mailto:manu@alt108.com">manu@alt108.com</a> · <a href="tel:+61400004414">0400 004 414</a></span>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>
