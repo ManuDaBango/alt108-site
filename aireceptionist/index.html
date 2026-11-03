@@ -5,67 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI receptionist demo | alt108</title>
   <meta name="description" content="Call 0495 102 009 and talk to a live AI receptionist. See how an after-hours receptionist could answer your business phone.">
+  <!-- "../" means "go up one folder", because this page sits inside its own folder -->
   <link rel="icon" href="../images/favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 
+<!-- HEADER: same as the main page, but links point back to it with ../ -->
 <header class="site-header">
   <div class="wrap">
     <a class="logo" href="../">alt<span>108</span></a>
-    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
     <nav class="menu">
       <a href="../#demos">All demos</a>
       <a href="../#pricing">Pricing</a>
       <a href="../#about">About</a>
-      <a class="btn btn-primary" href="../#contact">Free strategy session</a>
+      <a class="btn-orange" href="../#contact">Free strategy session</a>
     </nav>
   </div>
 </header>
 
 <main>
 
+<!-- =================================================================
+     DEMO PAGE LAYOUT (the same blocks on every demo page)
+       1. Title tile + number tile   2. Try it
+       3. Walkthrough video          4. What it could do for you
+       5. Built with + button
+     ================================================================= -->
+
 <!-- 1. TITLE AND THE NUMBER TO CALL -->
-<section class="demo-hero">
+<section>
   <div class="wrap">
     <div class="crumb"><a href="../#demos">← All demos</a></div>
-    <span class="label">Live demo · AI receptionist</span>
-    <h1>Pick up your phone and talk to my AI receptionist.</h1>
-    <p class="lead">
-      Sam is an AI that answers calls for a business. Ring the number below and ask him about
-      alt108's services, or tell him about your own business and what an after-hours receptionist
-      could do for it.
-    </p>
-    <div class="btn-row" style="margin-top:24px">
-      <a class="btn btn-primary" href="tel:+61495102009" style="font-size:1.4rem;padding:16px 28px">📞 Call 0495 102 009</a>
+    <div class="demo-hero-grid">
+      <div class="tile dark">
+        <span class="chip">Live demo · AI receptionist</span>
+        <h1 style="margin-top:18px">Pick up your phone and talk to my AI receptionist.</h1>
+        <p class="lead">
+          Sam is an AI that answers calls for a business. Ring the number and ask him about
+          alt108's services, or tell him about your own business and what an after-hours receptionist
+          could do for it.
+        </p>
+      </div>
+      <!-- The number to call. To change it, edit both the tel: link
+           (+61 format, no spaces or leading 0) and the words you can see. -->
+      <div class="tile orange stat">
+        <span>Call Sam now</span>
+        <a class="call-id" href="tel:+61495102009" style="color:#fff;text-decoration:none">0495 102 009</a>
+        <span>Overseas? Dial +61 495 102 009. Normal call charges apply. Sam is an AI and will say so if you ask.</span>
+      </div>
     </div>
-    <p class="note" style="color:#C5CCD6;margin-top:12px">
-      Overseas? Dial +61 495 102 009. Normal call charges apply. Sam is an AI and will say so if you ask.
-    </p>
   </div>
 </section>
 
 <!-- 2. PREPARE -->
 <section>
   <div class="wrap">
-    <h2>Two minutes of preparation makes the call better</h2>
-    <p class="lead">Sam is happiest when he knows what you're after. Decide on one of these before you dial:</p>
+    <div class="section-head">
+      <h2>Two minutes of preparation makes the call better</h2>
+      <p>Sam is happiest when he knows what you're after. Decide on one of these before you dial.</p>
+    </div>
     <div class="facts">
-      <div class="fact">
-        <h3>1. Ask about my services</h3>
+      <div class="tile">
+        <h3>Ask about my services</h3>
         <p>What kinds of apps does alt108 build? How long do they take and what do they cost? Have one real question ready.</p>
       </div>
-      <div class="fact">
-        <h3>2. Describe your business</h3>
+      <div class="tile">
+        <h3>Describe your business</h3>
         <p>Think of one phone call your team misses or one task that eats their time. Tell Sam about it and ask what could be done.</p>
       </div>
-      <div class="fact">
-        <h3>3. Leave a callback message</h3>
+      <div class="tile">
+        <h3>Leave a callback message</h3>
         <p>Have your name, your number and a one-line reason ready, and Sam will pass the message to me.</p>
       </div>
     </div>
-    <p class="note" style="margin-top:20px">
+    <p class="note" style="margin:16px 6px 0">
       Tips: speak naturally, as you would to a person. You can interrupt him. A short pause before he
       answers is normal. This is a demo, so please don't share anything private. Calls are logged so I can
       review and improve it.
@@ -74,47 +90,52 @@
 </section>
 
 <!-- 3. WHAT SAM CAN DO -->
-<section class="alt">
+<section>
   <div class="wrap">
-    <h2>What Sam can do</h2>
-    <ul class="outcomes">
-      <li>Answer questions about alt108's services</li>
-      <li>Find out what you need</li>
-      <li>Explain what an AI receptionist can do for you</li>
-      <li>Take a callback message</li>
-    </ul>
+    <div class="tile dark">
+      <h2>What Sam can do</h2>
+      <ul class="outcomes">
+        <li>Answer questions about alt108's services</li>
+        <li>Find out what you need</li>
+        <li>Explain what an AI receptionist can do for you</li>
+        <li>Take a callback message</li>
+      </ul>
+    </div>
   </div>
 </section>
 
 <!-- 4. WHY IT MATTERS -->
 <section>
   <div class="wrap">
-    <span class="label">Why it matters</span>
-    <h2>Switch your mobile off after hours. Keep the jobs.</h2>
-    <p class="lead">
-      A small electrical contractor or auto workshop can't answer the phone at 9pm, and a caller who
-      gets voicemail often rings the next business on the list. An after-hours AI receptionist answers
-      every call, finds out what the caller needs, and makes sure you hear about it.
-    </p>
-    <div class="facts">
-      <div class="fact"><h3>Every call answered</h3><p>No voicemail, no missed jobs, no owner glued to the phone.</p></div>
-      <div class="fact"><h3>Every call logged</h3><p>Name, number and reason go into a simple call log you can read in the morning.</p></div>
-      <div class="fact"><h3>Urgent calls flagged</h3><p>When a call can't wait, you get an email straight away.</p></div>
+    <div class="tile">
+      <h2>Switch your mobile off after hours. Keep the jobs.</h2>
+      <p class="lead">
+        A small electrical contractor or auto workshop can't answer the phone at 9pm, and a caller who
+        gets voicemail often rings the next business on the list. An after-hours AI receptionist answers
+        every call, finds out what the caller needs, and makes sure you hear about it.
+      </p>
+    </div>
+    <div class="facts" style="margin-top:var(--gap)">
+      <div class="tile"><h3>Every call answered</h3><p>No voicemail, no missed jobs, no owner glued to the phone.</p></div>
+      <div class="tile"><h3>Every call logged</h3><p>Name, number and reason go into a simple call log you can read in the morning.</p></div>
+      <div class="tile"><h3>Urgent calls flagged</h3><p>When a call can't wait, you get an email straight away.</p></div>
     </div>
   </div>
 </section>
 
 <!-- 5. BUILT WITH + CALL TO ACTION -->
-<section class="cta-band">
+<section>
   <div class="wrap">
-    <p class="label" style="color:var(--soft)">Built with</p>
-    <ul class="built-with" style="justify-content:center">
-      <li>Vapi</li><li>Twilio</li><li>n8n</li><li>Google Sheets</li>
-    </ul>
-    <h2 style="margin-top:32px">Want this answering your phone after hours?</h2>
-    <div class="btn-row">
-      <a class="btn btn-primary" href="tel:+61495102009">📞 Call Sam: 0495 102 009</a>
-      <a class="btn btn-dark" href="../#contact">Book a free strategy session</a>
+    <div class="tile dark cta-tile">
+      <p style="margin:0;color:var(--soft-on-dark)">Built with</p>
+      <ul class="built-with">
+        <li>Vapi</li><li>Twilio</li><li>n8n</li><li>Google Sheets</li>
+      </ul>
+      <h2>Want this answering your phone after hours?</h2>
+      <div class="btn-row">
+        <a class="btn btn-orange" href="tel:+61495102009">Call Sam: 0495 102 009</a>
+        <a class="btn btn-white" href="../#contact">Book a free strategy session</a>
+      </div>
     </div>
   </div>
 </section>
