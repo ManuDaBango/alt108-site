@@ -207,7 +207,55 @@
     .onJoinRow { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
     .onJoinRow input { margin-bottom: 0; text-transform: uppercase; letter-spacing: 3px; text-align: center; }
     .onJoinRow button { flex: 0 0 auto; width: auto; padding: 9px 18px; }
-    #lobbyCode { color: #ffe03a; letter-spacing: 4px; }
+    #lobbyLabel { text-align: center; font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; text-shadow: 0 1px 3px rgba(30,10,80,.5); }
+    #lobbyCode { text-align: center; font-family: var(--display); font-size: 68px; line-height: 1.05; margin-bottom: 8px; color: #ffe03a; letter-spacing: 8px; -webkit-text-stroke: 7px #4a24a8; paint-order: stroke fill; text-shadow: 0 5px 0 #4a24a8; }
+    .modeRow { display: flex; gap: 8px; margin-top: 4px; }
+    .modeRow button { flex: 1; font-size: 19px; padding: 11px 4px; }
+    #multiBox { margin-top: 12px; }
+    .orText { text-align: center; font-size: 14px; font-weight: 800; color: var(--ink-soft); margin: 10px 0 2px 0; }
+    #ovLines .ovNote { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 6px; }
+    #overlayCard { max-height: 94%; overflow-y: auto; }
+    .pChip.kittyChip { background: linear-gradient(180deg, #fff6d8, #ffe39a); }
+    .pChip.kittyChip .pBal { color: #c25e00; }
+    #players.hostTaps .pChip:not(.kittyChip) { cursor: pointer; }
+    /* NEW IN 14c: chat button, reactions, countdown */
+    .floatBtn { position: absolute; top: 8px; z-index: 7; width: 40px; height: 40px; border-radius: 50%; border: 0; font-size: 21px; line-height: 40px; padding: 0;
+                background: rgba(255,255,255,0.88); box-shadow: 0 3px 0 rgba(60,30,140,0.45); cursor: pointer; }
+    #chatBtn { left: 8px; }
+    #emojiBtn { right: 8px; }
+    .floatBtn .dot { position: absolute; top: 0; right: 0; width: 13px; height: 13px; border-radius: 50%; background: #ff3b5c; border: 2px solid #fff; }
+    #emojiRow { position: absolute; right: 8px; top: 54px; z-index: 8; background: #fff; border-radius: 16px; padding: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; box-shadow: 0 4px 0 var(--shadow); }
+    #emojiRow button { border: 0; background: none; font-size: 26px; padding: 4px 6px; cursor: pointer; }
+    #floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 9; }
+    .floater { position: absolute; bottom: 12%; text-align: center; font-size: 38px; animation: floatUp 2.6s ease-out forwards; }
+    .floater small { display: block; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(30,10,80,.8); }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 12% { opacity: 1; transform: translateY(-20px) scale(1.1); } 100% { transform: translateY(-380px) scale(1); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .floater { animation: none; opacity: 0.9; } }
+    #timerPill { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); z-index: 6; background: rgba(255,255,255,0.92); color: var(--ink); border-radius: 999px; padding: 3px 12px; font-size: 14px; font-weight: 800; box-shadow: 0 2px 0 rgba(60,30,140,0.4); white-space: nowrap; }
+    #timerPill.late { background: #ffe4e4; color: #b3001b; }
+    #chatSheet { position: fixed; inset: 0; background: rgba(30, 10, 80, 0.55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+    #chatSheet.hidden { display: none; }
+    #chatCard { background: #fff; width: min(100vw, 520px); height: min(72vh, 560px); border-radius: 22px 22px 0 0; padding: 12px; display: flex; flex-direction: column; color: var(--ink); }
+    #chatHead { display: flex; justify-content: space-between; align-items: center; font-size: 20px; margin-bottom: 6px; }
+    #chatCard button { width: auto; margin: 0; }          /* the game's buttons are full width by default */
+    #chatHead button { padding: 5px 14px; font-size: 16px; }
+    #chatList { flex: 1; overflow-y: auto; background: #f4f0ff; border-radius: 12px; padding: 8px; }
+    .chatLine { font-size: 15px; font-weight: 700; margin-bottom: 5px; word-break: break-word; }
+    .chatLine b { color: #5b2fc9; }
+    .chatLine.mine b { color: #0b7a3b; }
+    #quickRow { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 6px 0; }
+    #quickRow button { flex: none; padding: 6px 12px; font-size: 14px; }
+    #chatForm { display: flex; gap: 8px; }
+    #chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 10px; border: 2px solid #d8ccff; border-radius: 12px; }
+    #chatForm button { flex: none; padding: 8px 16px; font-size: 17px; }
+    #chatForm input { width: auto; margin: 0; }
+    #noticeBar { position: absolute; left: 5%; right: 5%; bottom: 13%; z-index: 6; background: #fff; border-radius: 14px; padding: 8px 10px;
+                 box-shadow: 0 4px 0 var(--shadow), 0 0 0 3px #ffd23f; font-size: 14px; font-weight: 800; color: var(--ink); text-align: center; }
+    #noticeBar button { margin-top: 6px; padding: 7px 14px; font-size: 16px; }
+    #topupModal { position: fixed; inset: 0; background: rgba(30, 10, 80, 0.55); z-index: 50; display: flex; align-items: center; justify-content: center; }
+    #topupModal.hidden { display: none; }
+    #topupCard { background: #fff; border-radius: 20px; padding: 18px; width: min(86vw, 340px); text-align: center; font-weight: 800; color: var(--ink); }
+    #topupCard button { margin-top: 10px; width: 100%; }
     #lobbyLink { font-size: 15px; font-weight: 800; word-break: break-all; text-align: center; margin: 6px 0 10px 0; }
     #lobbyMembers .member { font-size: 18px; font-weight: 800; padding: 6px 4px; display: flex; justify-content: space-between; }
     #lobbyMembers .member .away { opacity: 0.45; }
@@ -520,24 +568,26 @@
       <div class="potLabel">Jackpot<b id="potBigAmount"></b></div>
     </div>
 
-    <div class="card">
-      <label>Who's playing?</label>
-      <div id="nameRows"></div>
-      <button id="addPlayerBtn" class="secondary">+ Add a player</button>
-      <button id="startBtn" class="primary">Play</button>
-      <div class="hint" id="startHint"></div>
-    </div>
-
-    <!-- NEW IN 14a: play online with friends -->
-    <div class="card" id="onlineCard">
-      <h2>Play online with friends</h2>
-      <input id="onName" class="nameInput" maxlength="12" autocomplete="off" placeholder="Your name">
-      <button id="onCreate" class="primary">Create a room</button>
-      <div class="onJoinRow">
-        <input id="onCode" class="nameInput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="Room code">
-        <button id="onJoin" class="secondary">Join</button>
+    <!-- NEW IN 14b: one name box, then Single Player or Multiplayer (Host a game, or enter a join code) -->
+    <div class="card" id="startCard">
+      <label for="onName">Your name</label>
+      <input id="onName" class="nameInput" maxlength="12" autocomplete="off" placeholder="Type your name">
+      <div class="modeRow">
+        <button id="modeSingle" class="primary">Single Player</button>
+        <button id="modeMulti" class="secondary">Multiplayer</button>
+      </div>
+      <div id="multiBox" class="hidden">
+        <button id="onCreate" class="primary">Host a game</button>
+        <div class="orText">or join a friend's game</div>
+        <div class="onJoinRow">
+          <input id="onCode" class="nameInput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="Join code">
+          <button id="onJoin" class="secondary">Join</button>
+        </div>
       </div>
       <div class="hint" id="onMsg"></div>
+      <div class="hidden">
+        <div id="nameRows"></div><button id="addPlayerBtn">+</button><button id="startBtn">Play</button><div id="startHint"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -555,19 +605,20 @@
 
   <!-- ================= LOBBY (NEW IN 14a): waiting for friends before the host starts ================= -->
   <section id="screenLobby" class="screen hidden">
-    <h1>Room <span id="lobbyCode"></span></h1>
+    <div id="lobbyLabel">Join code</div>
+    <div id="lobbyCode"></div>
     <div class="card">
       <label>Send this link to your friends</label>
       <div id="lobbyLink"></div>
       <button id="lobbyCopy" class="secondary">Copy link</button>
-      <div class="hint">or tell them the code and they press Join</div>
+      <div class="hint">or tell them the join code</div>
     </div>
     <div class="card">
-      <h2>In the room</h2>
+      <h2>Players</h2>
       <div id="lobbyMembers"></div>
       <button id="lobbyStart" class="primary">Start game</button>
       <div class="hint" id="lobbyHint"></div>
-      <button id="lobbyLeave" class="secondary">Leave room</button>
+      <button id="lobbyLeave" class="secondary">Leave</button>
     </div>
   </section>
 
@@ -593,6 +644,12 @@
 
       <!-- NEW IN 9: the message line now floats over the top of the board -->
       <div id="status"></div>
+      <div id="floaters"></div>
+      <div id="timerPill" class="hidden"></div>
+      <button id="chatBtn" class="floatBtn hidden" aria-label="Chat">&#128172;<span id="chatDot" class="dot hidden"></span></button>
+      <button id="emojiBtn" class="floatBtn hidden" aria-label="Send a reaction">&#128512;</button>
+      <div id="emojiRow" class="hidden"></div>
+      <div id="noticeBar" class="hidden"><div id="noticeText"></div><button id="noticeBtn" class="secondary"></button></div>
 
       <!-- Messages and buttons that appear on top of the board between games -->
       <div id="overlay" class="hidden">
@@ -621,6 +678,25 @@
       <button id="menuBtn" class="secondary" aria-label="Menu">&#9776;</button>
     </div>
   </section>
+
+  <!-- NEW IN 14c: the chat sheet (messages, quick phrases, a box to type in) -->
+  <div id="chatSheet" class="hidden">
+    <div id="chatCard">
+      <div id="chatHead"><b>Chat</b><button id="chatClose" class="secondary">Close</button></div>
+      <div id="chatList"></div>
+      <div id="quickRow"></div>
+      <div id="chatForm"><input id="chatInput" maxlength="140" autocomplete="off" placeholder="Say something"><button id="chatSend" class="secondary">Send</button></div>
+    </div>
+  </div>
+
+  <!-- NEW IN 14b: the host adds money for a player -->
+  <div id="topupModal" class="hidden">
+    <div id="topupCard">
+      <div id="topupText"></div>
+      <button id="topupYes" class="primary"></button>
+      <button id="topupNo" class="secondary cloud">Cancel</button>
+    </div>
+  </div>
 
   <!-- NEW IN 9: the menu (Pay table, Sound, End game) -->
   <div id="menuSheet" class="hidden">
@@ -701,7 +777,11 @@
   // SETTINGS (money and rules). These are the numbers you can change to experiment.
   // ------------------------------------------------------------------------
   const STARTING_BALANCE   = 10;   // dollars each new player starts with (their "stack")
-  const KITTY_START        = 50;   // dollars in the kitty when the table opens (the jackpot reserve)
+  // CHANGED IN 14b: the kitty is now $20 for EVERY player (it used to be one $50 kitty shared out). So everyone buys in for
+  // STARTING_BALANCE + KITTY_PER_PLAYER = $30: $10 to play with and $20 into the shared kitty. A table of 2 opens with a $40 kitty, 5 with $100.
+  const KITTY_PER_PLAYER   = 20;
+  const KITTY_START        = KITTY_PER_PLAYER;   // one player's share; the page shows this on the home screen (the old name is kept)
+  const SETTLE_ROUND_CENTS = 10;   // settle-up payments are rounded to this many cents (the odd cents go to the biggest winner)
   const BET_MIN            = 1;    // smallest bet for one game
   const BET_MAX            = 5;    // biggest bet for one game
   const JACKPOT_MULTIPLIER = 50;   // three Stars pays this many times your bet, never more than the kitty holds
@@ -733,7 +813,7 @@
   function emptySession() {
     return {
       state: "home",
-      table: { players: [], current: 0, started: false, kitty: KITTY_START },
+      table: { players: [], current: 0, started: false, kitty: 0 },
       results: [], ballsLeft: 0, keepsTurn: false,
       lastOutcome: { label: "", payout: 0, net: 0, capped: false, wanted: 0 },
       outcomeKind: "none",
@@ -767,9 +847,15 @@
         lastBet: BET_MIN,            // what the game in progress (or just finished) was played at
         tiltWait: 0,                 // games to wait before Tilt is ready again (0 = ready)
         biggestWin: 0,
-        active: true                 // false once the player is out of the rotation
+        active: true,                // false once the player is out of the rotation (out of money, or cashed out)
+        putIn: STARTING_BALANCE + KITTY_PER_PLAYER,   // everything this player has paid in: grows by STARTING_BALANCE with each top-up
+        topUps: 0,                   // how many times the host has added a stack for this player
+        wantsTopUp: false,           // true while the player is asking the host for more money
+        cashedOut: false,            // true once the player has taken their money and left the pool
+        takeHome: 0                  // what they took when they cashed out (only meaningful if cashedOut)
       });
     }
+    S.table.kitty = KITTY_PER_PLAYER * S.table.players.length;     // $20 for each player who sits down
     S.state = "idle";
     return S;
   }
@@ -926,25 +1012,71 @@
     S.state = "final";
   }
 
-  // The current player leaves the rotation ("End game" / "Leave table" / "Cash out").
+  // CASHING OUT (CHANGED IN 14b). A player may cash out at any time, on anyone's turn. They take their stack PLUS an equal share of
+  // the kitty as it is right now (like cashing in chips at a poker table), and leave the pool. Their result is locked in.
+  // The kitty shrinks by the share they took, so the players who stay keep their own shares.
+  // If it was this player's turn the game ends for them ("gameover" screen, then the turn moves on). A game in progress is forfeited:
+  // its bet is already in the kitty and stays there.
+  function poolPlayers(S) { return S.table.players.filter(function (p) { return !p.cashedOut; }); }
+
+  function cashOut(S, index) {
+    const who = S.table.players[index];
+    if (!who || who.cashedOut || S.state === "home" || S.state === "final") { return { ok: false }; }
+    const multi = S.table.players.length > 1;
+    const wasCurrent = (index === S.table.current);
+    const forfeited = wasCurrent && (S.state === "playing");
+    const share = S.table.kitty / poolPlayers(S).length;     // equal share among everyone still in the pool (this player included)
+    S.table.kitty = S.table.kitty - share;
+    who.takeHome = who.balance + share;
+    who.balance = 0;                                         // the money has left the table
+    who.cashedOut = true;
+    who.active = false;
+    who.wantsTopUp = false;
+    const net = who.takeHome - who.putIn;
+    if (wasCurrent) {
+      S.endInfo = {
+        title: multi ? "Cashed out" : "Game ended",
+        line2: (multi ? who.name + " cashes out" : "You cash out") + " with " + moneyText(who.takeHome),
+        note: forfeited ? "(The game in progress was forfeited)" : ""
+      };
+      S.keepsTurn = false;
+      S.state = "gameover";
+    }
+    return { ok: true, wasCurrent: wasCurrent, forfeited: forfeited, takeHome: who.takeHome, net: net };
+  }
+
+  // The current player leaves the rotation ("End game" / "Cash out"), used by the one-player game.
   // Returns { action: "none" }   nothing to do (already finished),
   //         { action: "home" }   nobody has put a coin in yet, so just go back to the home screen,
   //         { action: "left", forfeited: bool, net: dollars to put on the scoreboard (0 if nothing was forfeited) }.
   function leaveTable(S) {
     if (S.state === "home" || S.state === "gameover" || S.state === "final") { return { action: "none" }; }
     if (S.state === "idle" && !S.table.started) { return { action: "home" }; }
+    const lastBet = me(S).lastBet;
+    const r = cashOut(S, S.table.current);
+    if (!r.ok) { return { action: "none" }; }
+    return { action: "left", forfeited: r.forfeited, net: r.forfeited ? -lastBet : 0 };
+  }
 
-    const who = me(S);
-    const multi = S.table.players.length > 1;
-    const forfeited = (S.state === "playing");         // were we in the middle of a game? Its bet is already in the kitty, so it is lost.
-    who.active = false;
-    S.endInfo = {
-      title: multi ? "Left the table" : "Game ended",
-      line2: (multi ? who.name + " walks" : "You walk") + " away with " + moneyText(who.balance),
-      note: forfeited ? "(The game in progress was forfeited)" : ""
-    };
-    S.state = "gameover";
-    return { action: "left", forfeited: forfeited, net: forfeited ? -who.lastBet : 0 };
+  // TOP-UP: the host adds one more starting stack to a player (for example after a big bet lost them everything).
+  // It is new money from that player's pocket, so it is added to what they have paid in; the settle-up counts it.
+  function requestTopUp(S, index) {
+    const p = S.table.players[index];
+    if (!p || p.cashedOut || S.state === "final" || S.state === "home") { return { ok: false }; }
+    if (p.balance >= BET_MIN) { return { ok: false }; }          // only for someone who cannot afford a bet
+    p.wantsTopUp = true;
+    return { ok: true };
+  }
+  function topUp(S, index) {
+    const p = S.table.players[index];
+    if (!p || p.cashedOut || S.state === "final" || S.state === "home") { return { ok: false }; }
+    p.balance = p.balance + STARTING_BALANCE;
+    p.putIn = p.putIn + STARTING_BALANCE;
+    p.topUps = p.topUps + 1;
+    p.wantsTopUp = false;
+    p.active = true;                                             // back in the rotation
+    clampBet(p);
+    return { ok: true };
   }
 
   // SKIPPING a player who is away or too slow. Unlike leaving, a skipped player STAYS in the rotation (their seat and money
@@ -981,19 +1113,42 @@
   }
 
   // ------------------------------------------------------------------------
-  // THE SETTLE-UP
+  // THE SETTLE-UP (CHANGED IN 14b)
   // ------------------------------------------------------------------------
-  // Everyone put in STARTING_BALANCE plus an equal share of the opening kitty. At the end the kitty that is left
-  // is shared equally, so each player takes home their stack plus their share. The nets add up to zero.
+  // Everyone paid in "putIn" ($10 stack + $20 for the kitty, plus any top-ups). A player who cashed out already took their
+  // money; everyone still in the pool takes their stack plus an equal share of what is left in the kitty.
+  // Each player's NET is what they take home minus what they paid in. The nets add up to zero, so the settle-up is just
+  // "who pays whom": the biggest loser pays the biggest winner, and so on, until everyone is square.
   function settle(S) {
-    const n = S.table.players.length;
-    const share = S.table.kitty / n;
-    const putIn = STARTING_BALANCE + KITTY_START / n;
+    const pool = poolPlayers(S);
+    const share = pool.length > 0 ? S.table.kitty / pool.length : 0;
     const rows = S.table.players.map(function (p) {
-      return { name: p.name, takeHome: p.balance + share, net: p.balance + share - putIn };
+      const takeHome = p.cashedOut ? p.takeHome : p.balance + share;
+      return { name: p.name, stack: p.cashedOut ? null : p.balance, cashedOut: p.cashedOut, topUps: p.topUps, putIn: p.putIn,
+               takeHome: takeHome, net: takeHome - p.putIn };
     });
-    rows.sort(function (a, b) { return b.takeHome - a.takeHome; });
-    return { share: share, putIn: putIn, kitty: S.table.kitty, rows: rows };
+    // work in whole cents, rounded to SETTLE_ROUND_CENTS; any leftover cents go to the biggest winner so the nets still add to zero
+    const cents = rows.map(function (r) { return Math.round(r.net * 100 / SETTLE_ROUND_CENTS) * SETTLE_ROUND_CENTS; });
+    let leftover = cents.reduce(function (t, c) { return t + c; }, 0);
+    if (leftover !== 0) {
+      let best = 0;
+      for (let i = 1; i < cents.length; i++) { if (cents[i] > cents[best]) { best = i; } }
+      cents[best] = cents[best] - leftover;
+    }
+    rows.forEach(function (r, i) { r.netRounded = cents[i] / 100; });
+    // who pays whom (greedy: biggest debtor pays biggest creditor)
+    const owe = cents.map(function (c, i) { return { i: i, c: c }; });
+    const payments = [];
+    for (let guard = 0; guard < 50; guard++) {
+      owe.sort(function (a, b) { return a.c - b.c; });
+      const debtor = owe[0], creditor = owe[owe.length - 1];
+      if (debtor.c >= 0 || creditor.c <= 0) { break; }
+      const amount = Math.min(-debtor.c, creditor.c);
+      payments.push({ from: rows[debtor.i].name, to: rows[creditor.i].name, amount: amount / 100 });
+      debtor.c += amount; creditor.c -= amount;
+    }
+    rows.sort(function (a, b) { return b.net - a.net; });
+    return { share: share, kitty: S.table.kitty, poolCount: pool.length, rows: rows, payments: payments };
   }
 
   // Dollars as text for the engine's own messages ("$8" or "$8.33"). The page has its own copy for the screen.
@@ -1003,7 +1158,7 @@
   }
 
   return {
-    STARTING_BALANCE: STARTING_BALANCE, KITTY_START: KITTY_START, BET_MIN: BET_MIN, BET_MAX: BET_MAX,
+    STARTING_BALANCE: STARTING_BALANCE, KITTY_START: KITTY_START, KITTY_PER_PLAYER: KITTY_PER_PLAYER, BET_MIN: BET_MIN, BET_MAX: BET_MAX,
     JACKPOT_MULTIPLIER: JACKPOT_MULTIPLIER, TILT_EVERY_GAMES: TILT_EVERY_GAMES, TILT_SMALL: TILT_SMALL,
     TILT_LARGE: TILT_LARGE, BALLS_PER_GAME: BALLS_PER_GAME, MAX_PLAYERS: MAX_PLAYERS,
     SOUND_BIG_WIN_AT: SOUND_BIG_WIN_AT, KEEP_TURN_MIN_PAYOUT: KEEP_TURN_MIN_PAYOUT,
@@ -1011,7 +1166,7 @@
     emptySession: emptySession, newSession: newSession, me: me, activePlayers: activePlayers,
     nextActiveIndex: nextActiveIndex, clampBet: clampBet, changeBet: changeBet, startGame: startGame,
     evaluateGame: evaluateGame, ballLanded: ballLanded, advanceTurn: advanceTurn, showFinal: showFinal,
-    leaveTable: leaveTable, skipTurn: skipTurn, canTilt: canTilt, useTilt: useTilt, settle: settle, plural: plural
+    leaveTable: leaveTable, cashOut: cashOut, poolPlayers: poolPlayers, topUp: topUp, requestTopUp: requestTopUp, skipTurn: skipTurn, canTilt: canTilt, useTilt: useTilt, settle: settle, plural: plural
   };
 }));
 
@@ -2260,11 +2415,13 @@
     if (multi) {
       topbar.insertBefore(playersEl, topbar.firstChild);
       topbar.classList.remove("hidden");
+      document.querySelector(".potMini").classList.add("hidden");        // NEW IN 14b: the kitty chip replaces the little pile
       ticketLabelEl.classList.remove("hidden");
       ticket.appendChild(document.querySelector(".potMini"));
     } else {
       ticket.insertBefore(playersEl, ticketLabelEl);
       topbar.classList.add("hidden");
+      document.querySelector(".potMini").classList.remove("hidden");
       ticketLabelEl.classList.add("hidden");
       ticket.appendChild(document.querySelector(".potMini"));
     }
@@ -2279,11 +2436,20 @@
       chip.appendChild(balEl);
       playersEl.appendChild(chip);
     }
+    if (multi) {                                           // NEW IN 14b: the kitty is the last chip
+      const kitty = document.createElement("div");
+      kitty.className = "pChip kittyChip";
+      kitty.id = "kittyChip";
+      kitty.innerHTML = "<span class='pName'>Kitty</span><b class='pBal'></b>";
+      playersEl.appendChild(kitty);
+    }
   }
 
   function updatePlayerStrip() {
     const chips = playersEl.children;
-    for (let i = 0; i < chips.length; i++) {
+    const kittyChip = document.getElementById("kittyChip");
+    if (kittyChip) { setText(kittyChip.children[1], money(S.table.kitty)); }
+    for (let i = 0; i < S.table.players.length && i < chips.length; i++) {
       const p = S.table.players[i];
       const isTurn = (i === S.table.current && p.active && S.state !== "final");
       const wanted = "pChip" + (isTurn ? " current" : "") + (p.active ? "" : " out");
@@ -2299,10 +2465,11 @@
     if (S.table.players.length === 0) return;          // nobody is seated yet (home screen)
     const multi = S.table.players.length > 1;
     setText(ticketLabelEl, multi ? me().name + "'s " + BALLS_PER_GAME + " balls" : "Your " + BALLS_PER_GAME + " balls");
-    setText(endBtn, multi ? "Leave table" : "End game");
+    setText(endBtn, multi ? (online ? "Cash out" : "Leave table") : "End game");
     updatePlayerStrip();
     updateSlots();
     updatePots();
+    if (online) { updateNotice(); playersEl.classList.toggle("hostTaps", online.host); }
     refreshControls();   // keep the pull button and status line in step with the new state straight away
   }
 
@@ -2494,20 +2661,25 @@
       } else if (multi) {
         primary = "Settle up";
       }
-      return { title: S.endInfo.title, lines: lines, primary: primary, secondary: "" };
+      // NEW IN 14b: a lone player who is broke can add a new stack and keep going
+      const canAdd = (!multi && !who.cashedOut && who.balance < BET_MIN);
+      return { title: S.endInfo.title, lines: lines, primary: primary, secondary: canAdd ? "Add " + money(STARTING_BALANCE) + " and keep playing" : "" };
     }
     if (S.state === "final") {
-      // THE SETTLE-UP, worked out by the rulebook (Rules.settle). Each player takes home their stack plus an equal share of the kitty.
+      // CHANGED IN 14b: the settle-up says WHO PAYS WHOM, in plain words. The working-out is small print underneath.
       const st = Rules.settle(S);
-      // NEW IN 14a: show the sums, not just the answer. Start value, then the kitty split, then each player's working.
       const lines = [];
-      lines.push("Everyone started with " + money(st.putIn) + ": a " + money(Rules.STARTING_BALANCE) + " stack plus a " + money(st.putIn - Rules.STARTING_BALANCE) + " share of the opening kitty.");
-      lines.push("Kitty left: " + money(st.kitty) + ", split equally = " + money(st.share) + " each.");
-      st.rows.forEach(function (row, i) {
-        lines.push((i === 0 ? "\u2605 " : (i + 1) + ". ") + row.name + ": " + money(row.takeHome - st.share) + " stack + " + money(st.share) + " = " + money(row.takeHome) + " (" + signed(row.net) + ")");
+      if (st.payments.length === 0) {
+        lines.push(st.rows.length === 1 ? "You finish with " + money(st.rows[0].takeHome) + "." : "All square. Nobody owes anything.");
+      } else {
+        st.payments.forEach(function (pay) { lines.push(pay.from + " pays " + pay.to + " " + money(pay.amount)); });
+      }
+      const notes = st.rows.map(function (r) {
+        return r.name + ": " + signed(r.netRounded) + " (took home " + money(r.takeHome) + ", paid in " + money(r.putIn) + (r.cashedOut ? ", cashed out" : "") + ")";
       });
-      lines.push("The (+/-) is compared with the " + money(st.putIn) + " you started with.");
-      return { title: "Settle up", lines: lines, primary: "See scoreboard", secondary: "" };
+      notes.push("Everyone pays " + money(STARTING_BALANCE + Rules.KITTY_PER_PLAYER) + " to start: " + money(STARTING_BALANCE) + " to play with and " + money(Rules.KITTY_PER_PLAYER) +
+                 " into a shared kitty. Prizes come out of the kitty, so a friend's win is partly your money. At the end the kitty is split equally.");
+      return { title: "Settle up", lines: lines, notes: notes, primary: "See scoreboard", secondary: "" };
     }
     return null;   // while playing there is no overlay
   }
@@ -2526,6 +2698,13 @@
       div.textContent = line;
       ovLines.appendChild(div);
     }
+    (content.notes || []).forEach(function (note) {        // NEW IN 14b: small print under the main lines
+      const div = document.createElement("div");
+      div.className = "ovNote";
+      div.textContent = note;
+      ovLines.appendChild(div);
+    });
+    document.getElementById("ovButtons").classList.toggle("hidden", !!content.banner);   // NEW IN 14b: a banner has no buttons, it passes by itself
     betRowEl.classList.toggle("hidden", !content.bet);
     betLabelEl.classList.toggle("hidden", !content.bet);
     if (content.bet) { betValEl.textContent = money(me().bet); }
@@ -2557,7 +2736,12 @@
   function secondaryAction() {
     if (online) { onlineSecondary(); return; }           // NEW IN 14a
     // "Back" (before anyone has played) and "Leave table" / "Cash out" are all handled by endGameEarly.
-    if (S.state === "idle" || S.state === "result") endGameEarly();
+    if (S.state === "idle" || S.state === "result") { endGameEarly(); return; }
+    if (S.state === "gameover" && Rules.topUp(S, 0).ok) {        // NEW IN 14b: the lone player adds a new stack
+      S.table.current = 0;
+      Rules.advanceTurn(S);
+      updateUi(); renderOverlay(); soundCoinInsert();
+    }
   }
 
   // ---- The pay table (built from the payout settings, so it can never be out of date) ----
@@ -2711,7 +2895,7 @@
       "<h3>Betting</h3>" +
       "<p>Before each game pick a bet from " + money(BET_MIN) + " to " + money(BET_MAX) + " with the + and - buttons. Prizes are multiplied by your bet. Your bet is remembered for your next turn.</p>" +
       "<h3>The kitty</h3>" +
-      "<p>Bets go into a shared kitty (it starts at " + money(KITTY_START) + ") and prizes are paid from it, like a poker pot. If the kitty runs low, prizes shrink to what is left. If you can't afford the smallest bet you are out.</p>" +
+      "<p>Bets go into a shared kitty (everyone adds " + money(Rules.KITTY_PER_PLAYER) + " to it at the start) and prizes are paid from it, like a poker pot. If the kitty runs low, prizes shrink to what is left. If you can't afford the smallest bet you are out.</p>" +
       "<h3>Winning</h3><ul>" +
       "<li>Three of a kind pays the most for the fruit.</li>" +
       "<li>A wild card " + star + " counts as any fruit: two alike + a " + star + " pays a bit less.</li>" +
@@ -2719,6 +2903,7 @@
       "<li>Three " + star + " is the JACKPOT: " + JACKPOT_MULTIPLIER + " x your bet (or the whole kitty if it is smaller).</li>" +
       "<li>The Bell pays the most of the fruits. Narrow cups (the Bell and the " + star + ") are harder to hit.</li></ul>" +
       "<p>Win and you play again. Lose and the turn passes on.</p>" +
+      "<h3>Cashing out</h3><p>You can cash out any time from the menu: you take your stack plus an equal share of the kitty and you are done. Out of money? Ask the host to add " + money(STARTING_BALANCE) + ".</p>" +
       "<h3>Tilt</h3>" +
       "<p>Tap Tilt while the ball is rolling to nudge it sideways. You can't choose which way or how hard! You can use it once every " + TILT_EVERY_GAMES + " of your games.</p>" +
       "<h3>Tips</h3><ul><li>Hint: aim for the " + star + "</li><li>The Shuffle cups button (in the menu) rearranges the cups between balls, once per ball.</li></ul>";
@@ -2731,7 +2916,7 @@
 
   endBtn.addEventListener("click", function () {
     // Ending in the middle of a game loses the stake, so ask first (a thumb can slip).
-    if (S.state === "playing") {
+    if (S.state === "playing" && (!online || isMyTurn())) {          // CHANGED IN 14b: only YOUR game in progress is forfeited
       const leaving = (S.table.players.length > 1) ? "Leave the table now?" : "End now?";
       if (!window.confirm(leaving + " The game in progress will be forfeited.")) {
         return;
@@ -3065,6 +3250,7 @@
     const found = location.search.match(/[?&]server=([^&]+)/);
     return found ? decodeURIComponent(found[1]) : "wss://game-of-frueets-server.onrender.com";
   })();
+  const EXPECTED_SERVER = "14c";                         // the server version this page was written for (see SERVER_VERSION in server.js)
   const ROOM_KEY = "frueets-room";                       // remembered in this browser so a refresh puts you back in your room
 
   function isMyTurn() {
@@ -3111,28 +3297,37 @@
         homeNote("Could not connect. Check the internet and try again.");
         return;
       }
+      if (mine.rejoining) { mine.retry = setTimeout(function () { reconnect(mine); }, 3000); return; }   // still trying to get back in
       resultText = "Connection lost. Reconnecting...";      // got in before: keep trying with our token
       refreshControls();
-      mine.retry = setTimeout(function () {
-        if (online !== mine) { return; }
-        const again = { type: "join", code: mine.code, name: mine.name, token: mine.token };
-        const keep = mine;
-        openConnection(again, keep.name);
-        homeNote("");
-        online.code = keep.code; online.token = keep.token; online.joined = true; online.started = keep.started; online.host = keep.host;
-      }, 2000);
+      mine.retry = setTimeout(function () { reconnect(mine); }, 2000);
     };
   }
+
+  // Come back into the game with our secret token. Used after a dropped line, and when a sleeping phone wakes up.
+  function reconnect(mine) {
+    if (online !== mine || !mine.joined) { return; }
+    if (mine.retry) { clearTimeout(mine.retry); }
+    const keep = mine;
+    openConnection({ type: "join", code: keep.code, name: keep.name, token: keep.token }, keep.name);
+    online.code = keep.code; online.token = keep.token; online.joined = true; online.started = keep.started; online.host = keep.host;
+    online.rejoining = true;                               // until the server says "joined", a refusal means the game is gone
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && online && online.joined) { reconnect(online); }
+  });
 
   function onServerMessage(mine, m) {
     if (online !== mine) { return; }
     if (m.type === "joined") {
+      mine.oldServer = (m.version !== EXPECTED_SERVER);        // NEW IN 14c: an out-of-date server is reported on screen
+      mine.rejoining = false;
       mine.joined = true; mine.code = m.code; mine.token = m.token; mine.name = m.name; mine.host = m.host;
       saveRoom();
       return;
     }
     if (m.type === "error") {
-      if (!mine.joined) {                                   // e.g. "No room with that code"
+      if (!mine.joined || mine.rejoining) {                 // e.g. "No game with that code"
         forgetRoom();
         mine.closing = true; try { mine.socket.close(); } catch (e) {}
         online = null;
@@ -3150,7 +3345,9 @@
     }
     if (m.type === "event") { onServerEvent(mine, m); return; }
     if (m.type === "room") { onRoomState(mine, m); return; }
-    // chat, chatHistory and react arrive in the next step
+    if (m.type === "chat") { addChatLine(m, true); return; }
+    if (m.type === "chatHistory") { chatList.textContent = ""; (m.messages || []).forEach(function (line) { addChatLine(line, false); }); return; }
+    if (m.type === "react") { floatReaction(m.name, m.emoji); return; }
   }
 
   // The server's picture of the whole table. Everything on screen is redrawn from it.
@@ -3160,6 +3357,7 @@
     const me0 = m.members.find(function (x) { return x.name === mine.name; });
     mine.host = !!(me0 && me0.host);
     mine.rolling = !!m.rolling;
+    mine.turnEnd = (m.turnMsLeft === null || m.turnMsLeft === undefined) ? 0 : Date.now() + m.turnMsLeft;     // NEW IN 14c: when the current player runs out of time
     if (!m.started) {
       mine.started = false;
       renderLobby();
@@ -3169,11 +3367,12 @@
     const before = S.state;
     const firstTime = !mine.started;
     mine.started = true;
+    setSocialVisible(true);                                // NEW IN 14c: chat and reaction buttons appear once the game starts
     S = m.session;
     // The cups: repaint only when they changed (this message comes often).
     const key = JSON.stringify(m.cups);
     if (m.cups && key !== mine.cupsKey) { mine.cupsKey = key; cups = m.cups; sceneDirty = true; }
-    if (firstTime || playersEl.children.length !== S.table.players.length) {
+    if (firstTime || document.querySelectorAll("#players .pChip").length !== S.table.players.length + (S.table.players.length > 1 ? 1 : 0)) {
       buildPlayerStrip();
       setCelebrate(false);
       showScreen("game");
@@ -3204,6 +3403,7 @@
     }
     if (S.state === "final" && before !== "final") { soundFanfare(); }
     updateUi();
+    updateNotice();
   }
 
   // Sounds and little animations, so every screen reacts to what happens (the server just says what happened).
@@ -3221,6 +3421,12 @@
       reshuffleUsed = true; resultText = "Cups reshuffled!"; soundShuffle();
     } else if (e.name === "pass") {
       setCelebrate(false); soundPass();
+    } else if (e.name === "cashout") {
+      resultText = e.player + " cashed out with " + money(e.takeHome); soundPass();
+    } else if (e.name === "topup") {
+      resultText = e.player + " got " + money(e.amount) + " more"; soundCoinInsert();
+    } else if (e.name === "topupAsked") {
+      resultText = e.player + " is out of money";
     } else if (e.name === "skipped") {
       resultText = e.player + " was skipped";
     }
@@ -3231,10 +3437,26 @@
   function onlineOverlayTweaks(c) {
     if (c === null) { return null; }
     if (S.state === "final") {
-      c.primary = "Leave room";
+      c.primary = "Leave game";
       c.secondary = "";
       return c;
     }
+    // NEW IN 14b: after a game that does not keep the turn, everyone just sees the result for a moment; the server moves on by itself.
+    const bannerNow = (S.state === "result" && !S.keepsTurn && activePlayers().length > 1) || (S.state === "gameover" && activePlayers().length > 0);
+    if (bannerNow) {
+      const key = S.state + "|" + S.table.current + "|" + JSON.stringify(S.lastOutcome);
+      if (online.bannerKey !== key) { online.bannerKey = key; online.bannerAt = Date.now(); setTimeout(renderOverlay, 6500); }
+    }
+    if (bannerNow && Date.now() - online.bannerAt < 6000) {       // after 6 s without the server moving on, fall through and show the buttons
+      c.banner = true; c.bet = false; c.primary = ""; c.secondary = "";
+      c.lines = c.lines.map(function (line) { return isMyTurn() ? line : line.replace(/^You have/, me().name + " has").replace(/^You won/, me().name + " won"); });
+      return c;
+    }
+    if (S.state === "gameover") {                          // nobody left in the rotation: the settle-up button, for the player or the host
+      c.primary = "Settle up"; c.secondary = ""; c.waiting = !(isMyTurn() || online.host);
+      return c;
+    }
+    if (isMyTurn() && (c.secondary === "Leave table" || c.secondary === "Back")) { c.secondary = "Cash out"; }
     if (!isMyTurn()) {
       const who = me();
       c.lines = c.lines.map(function (line) {
@@ -3259,8 +3481,10 @@
   // "Leave table": before the game starts or at the end you just leave the room. In a game, on your turn, you cash out and
   // keep your money (a game in progress forfeits its bet) and stay to watch. Not your turn: you leave the room.
   function onlineLeaveFlow() {
-    if (!online.started || S.state === "final" || !isMyTurn()) { leaveOnline(); return; }
-    sendOnline({ type: "cashout" });
+    const mineP = S.table.players.find(function (p) { return p.name === online.name; });
+    if (!online.started || S.state === "final" || !mineP || mineP.cashedOut) { leaveOnline(); return; }
+    if (isMyTurn() && ballIsRolling()) { resultText = "Wait for the ball to land, then cash out."; refreshControls(); return; }
+    sendOnline({ type: "cashout" });                       // you take your stack plus an equal share of the kitty, right now
   }
 
   function leaveOnline() {
@@ -3271,6 +3495,7 @@
     try { online.socket.close(); } catch (e) {}
     online = null;
     forgetRoom();
+    setSocialVisible(false);
     S = Rules.emptySession();
     removeBall();
     setCelebrate(false);
@@ -3279,6 +3504,140 @@
     renderHome();
     homeNote("");
   }
+
+  // ---- NEW IN 14b: the little notice on the board (cashed out / out of money / someone asks for money) and the top-up pop-up ----
+  const noticeBar = document.getElementById("noticeBar");
+  const noticeBtn = document.getElementById("noticeBtn");
+  let noticeAction = null;
+  function updateNotice() {
+    let text = "", button = "", action = null;
+    if (online && online.oldServer) { text = "The game server is out of date, so some things may not work. The host needs to update it on Render."; }
+    const mineP = online && online.started ? S.table.players.find(function (p) { return p.name === online.name; }) : null;
+    if (mineP && S.state !== "final" && text === "") {
+      if (mineP.cashedOut) {
+        text = "You cashed out with " + money(mineP.takeHome) + " (" + signed(mineP.takeHome - mineP.putIn) + "). The settle-up shows when everyone is done.";
+        button = "Leave game"; action = leaveOnline;
+      } else if (!mineP.active && mineP.balance < BET_MIN) {
+        if (mineP.wantsTopUp) { text = "You are out of money. Waiting for the host to add " + money(STARTING_BALANCE) + "..."; }
+        else if (online.host) { text = "You are out of money."; button = "Add " + money(STARTING_BALANCE) + " for me"; action = function () { sendOnline({ type: "topUp", name: online.name }); }; }
+        else { text = "You are out of money."; button = "Ask the host for " + money(STARTING_BALANCE); action = function () { sendOnline({ type: "requestTopUp" }); }; }
+      } else if (online.host) {
+        const asking = S.table.players.find(function (p) { return p.wantsTopUp && !p.cashedOut; });
+        if (asking) { text = asking.name + " is out of money."; button = "Add " + money(STARTING_BALANCE) + " for " + asking.name; action = function () { sendOnline({ type: "topUp", name: asking.name }); }; }
+      }
+    }
+    noticeBar.classList.toggle("hidden", text === "");
+    document.getElementById("noticeText").textContent = text;
+    noticeBtn.classList.toggle("hidden", button === "");
+    noticeBtn.textContent = button;
+    noticeAction = action;
+  }
+  noticeBtn.addEventListener("click", function () { if (noticeAction) { noticeAction(); } });
+  // The host taps a player's name to add money for them.
+  let topupFor = "";
+  function openTopup(name) {
+    topupFor = name;
+    document.getElementById("topupText").textContent = "Add " + money(STARTING_BALANCE) + " to " + name + "'s stack? " + name + " will owe " + money(STARTING_BALANCE) + " more at the settle-up.";
+    document.getElementById("topupYes").textContent = "Add " + money(STARTING_BALANCE);
+    document.getElementById("topupModal").classList.remove("hidden");
+  }
+  document.getElementById("topupYes").addEventListener("click", function () { sendOnline({ type: "topUp", name: topupFor }); document.getElementById("topupModal").classList.add("hidden"); });
+  document.getElementById("topupNo").addEventListener("click", function () { document.getElementById("topupModal").classList.add("hidden"); });
+  playersEl.addEventListener("click", function (event) {
+    if (!online || !online.host || !online.started || S.state === "final") { return; }
+    const chip = event.target.closest(".pChip");
+    if (!chip || chip.id === "kittyChip") { return; }
+    const player = S.table.players[Array.prototype.indexOf.call(playersEl.children, chip)];
+    if (player && !player.cashedOut) { openTopup(player.name); }
+  });
+
+  // ---- NEW IN 14c: CHAT, REACTIONS AND THE TURN COUNTDOWN ----
+  // Everything people type comes from OTHER people, so it is only ever shown with textContent (never innerHTML): that way a message
+  // like "<b>hi</b>" appears as plain letters and can never run as code. (The server also strips < and > before it sends.)
+  const EMOJIS = ["\u{1F44F}", "\u{1F602}", "\u{1F62E}", "\u{1F525}", "\u{1F62D}", "\u{1F389}", "\u{1F440}", "\u2764\uFE0F"];   // must match REACTIONS in server.js
+  const QUICK_PHRASES = ["Nice one!", "So close!", "Star! Star! Star!", "My turn next!", "Hurry up :)", "Good game!"];
+  const chatSheet = document.getElementById("chatSheet");
+  const chatList = document.getElementById("chatList");
+  const chatInput = document.getElementById("chatInput");
+  const chatDot = document.getElementById("chatDot");
+  const emojiRow = document.getElementById("emojiRow");
+  let unreadChat = 0;
+
+  function setSocialVisible(on) {
+    ["chatBtn", "emojiBtn"].forEach(function (id) { document.getElementById(id).classList.toggle("hidden", !on); });
+    if (!on) { emojiRow.classList.add("hidden"); chatSheet.classList.add("hidden"); chatList.textContent = ""; unreadChat = 0; chatDot.classList.add("hidden"); document.getElementById("timerPill").classList.add("hidden"); }
+  }
+  function addChatLine(m, countUnread) {
+    const line = document.createElement("div");
+    line.className = "chatLine" + (online && m.name === online.name ? " mine" : "");
+    const who = document.createElement("b");
+    who.textContent = m.name + ": ";
+    const said = document.createElement("span");
+    said.textContent = m.text;
+    line.appendChild(who);
+    line.appendChild(said);
+    chatList.appendChild(line);
+    while (chatList.children.length > 60) { chatList.removeChild(chatList.firstChild); }
+    chatList.scrollTop = chatList.scrollHeight;
+    if (countUnread && chatSheet.classList.contains("hidden") && online && m.name !== online.name) {
+      unreadChat++;
+      chatDot.classList.remove("hidden");                 // the red dot says "there is something new to read"
+      if (soundReady()) { tone(880, 0.12, { type: "sine", volume: 0.12 }); }
+    }
+  }
+  function openChat() {
+    chatSheet.classList.remove("hidden");
+    unreadChat = 0;
+    chatDot.classList.add("hidden");
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+  function sendChat(text) {
+    const clean = String(text || "").trim();
+    if (clean !== "") { sendOnline({ type: "chat", text: clean }); }
+  }
+  document.getElementById("chatBtn").addEventListener("click", openChat);
+  document.getElementById("chatClose").addEventListener("click", function () { chatSheet.classList.add("hidden"); });
+  chatSheet.addEventListener("click", function (event) { if (event.target === chatSheet) { chatSheet.classList.add("hidden"); } });
+  document.getElementById("chatSend").addEventListener("click", function () { sendChat(chatInput.value); chatInput.value = ""; });
+  chatInput.addEventListener("keydown", function (event) { if (event.key === "Enter") { sendChat(chatInput.value); chatInput.value = ""; } });
+  QUICK_PHRASES.forEach(function (phrase) {
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.textContent = phrase;
+    button.addEventListener("click", function () { sendChat(phrase); });
+    document.getElementById("quickRow").appendChild(button);
+  });
+  // reactions: tap the smiley, pick one, and it floats up on EVERYONE's screen
+  EMOJIS.forEach(function (emoji) {
+    const button = document.createElement("button");
+    button.textContent = emoji;
+    button.addEventListener("click", function () { sendOnline({ type: "react", emoji: emoji }); emojiRow.classList.add("hidden"); });
+    emojiRow.appendChild(button);
+  });
+  document.getElementById("emojiBtn").addEventListener("click", function () { emojiRow.classList.toggle("hidden"); });
+  function floatReaction(name, emoji) {
+    const layer = document.getElementById("floaters");
+    if (layer.children.length > 24) { return; }
+    const item = document.createElement("div");
+    item.className = "floater";
+    item.style.left = (8 + Math.random() * 72) + "%";
+    item.textContent = emoji;
+    const tag = document.createElement("small");
+    tag.textContent = name;
+    item.appendChild(tag);
+    layer.appendChild(item);
+    setTimeout(function () { if (item.parentNode) { item.parentNode.removeChild(item); } }, 2800);
+  }
+  // the countdown: the server says how many milliseconds are left; we count down from that and only show it in the last 20 seconds
+  setInterval(function () {
+    const pill = document.getElementById("timerPill");
+    if (!online || !online.started || !online.turnEnd || S.state === "final") { pill.classList.add("hidden"); return; }
+    const left = Math.ceil((online.turnEnd - Date.now()) / 1000);
+    if (left > 20 || left < 0) { pill.classList.add("hidden"); return; }
+    pill.textContent = (isMyTurn() ? "Your turn" : me().name) + ": " + left + "s";
+    pill.classList.toggle("late", left <= 10);
+    pill.classList.remove("hidden");
+  }, 250);
 
   // ---- The lobby ----
   function roomLink() {
@@ -3323,6 +3682,15 @@
     store.lastName = name; saveStore();
     return name;
   }
+  document.getElementById("modeSingle").addEventListener("click", function () {       // NEW IN 14b
+    const typed = onNameEl.value.trim();
+    if (typed !== "") { store.lastName = typed; saveStore(); }
+    buildNameRows([typed]);                                  // the one-device game reads its names from these boxes
+    enterGameFromHome();
+  });
+  document.getElementById("modeMulti").addEventListener("click", function () {
+    document.getElementById("multiBox").classList.toggle("hidden");
+  });
   document.getElementById("onCreate").addEventListener("click", function () {
     const name = typedOnlineName();
     if (name !== "") { openConnection({ type: "create", name: name }, name); }
@@ -3331,7 +3699,7 @@
     const name = typedOnlineName();
     const code = onCodeEl.value.trim().toUpperCase();
     if (name === "") { return; }
-    if (code.length !== 4) { homeNote("Room codes are 4 letters."); onCodeEl.focus(); return; }
+    if (code.length !== 4) { homeNote("Join codes are 4 letters."); onCodeEl.focus(); return; }
     openConnection({ type: "join", code: code, name: name }, name);
   });
   onCodeEl.addEventListener("input", function () { onCodeEl.value = onCodeEl.value.toUpperCase().replace(/[^A-Z]/g, ""); });
@@ -3339,9 +3707,12 @@
   // A link like .../frueets/?room=KQWM fills in the code; a refresh puts you back in the room you were in.
   (function startupOnline() {
     const found = location.search.match(/[?&]room=([A-Za-z]{4})/);
-    if (found) {
+    let savedSeat = null;
+    try { savedSeat = JSON.parse(localStorage.getItem(ROOM_KEY) || "null"); } catch (e) {}
+    if (found && !(savedSeat && savedSeat.token && savedSeat.code === found[1].toUpperCase())) {     // same code as your saved seat = you are already in it
       onCodeEl.value = found[1].toUpperCase();
-      homeNote("Type your name and press Join to enter room " + onCodeEl.value + ".");
+      document.getElementById("multiBox").classList.remove("hidden");
+      homeNote("Type your name and press Join to enter game " + onCodeEl.value + ".");
       onNameEl.focus();
       return;
     }
@@ -3349,7 +3720,7 @@
     try { saved = JSON.parse(localStorage.getItem(ROOM_KEY) || "null"); } catch (e) {}
     if (saved && saved.code && saved.token && saved.name) {
       openConnection({ type: "join", code: saved.code, name: saved.name, token: saved.token }, saved.name);
-      homeNote("Going back to room " + saved.code + "...");
+      homeNote("Going back to your game...");
     }
   })();
 
