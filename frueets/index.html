@@ -2441,10 +2441,14 @@
     if (S.state === "final") {
       // THE SETTLE-UP, worked out by the rulebook (Rules.settle). Each player takes home their stack plus an equal share of the kitty.
       const st = Rules.settle(S);
-      const lines = st.rows.map(function (row, i) {
-        return (i === 0 ? "\u2605 " : (i + 1) + ". ") + row.name + "  " + money(row.takeHome) + "  (" + signed(row.net) + ")";
+      // NEW IN 14a: show the sums, not just the answer. Start value, then the kitty split, then each player's working.
+      const lines = [];
+      lines.push("Everyone started with " + money(st.putIn) + ": a " + money(Rules.STARTING_BALANCE) + " stack plus a " + money(st.putIn - Rules.STARTING_BALANCE) + " share of the opening kitty.");
+      lines.push("Kitty left: " + money(st.kitty) + ", split equally = " + money(st.share) + " each.");
+      st.rows.forEach(function (row, i) {
+        lines.push((i === 0 ? "\u2605 " : (i + 1) + ". ") + row.name + ": " + money(row.takeHome - st.share) + " stack + " + money(st.share) + " = " + money(row.takeHome) + " (" + signed(row.net) + ")");
       });
-      lines.push("Kitty left " + money(st.kitty) + ", shared " + money(st.share) + " each");
+      lines.push("The (+/-) is compared with the " + money(st.putIn) + " you started with.");
       return { title: "Settle up", lines: lines, primary: "See scoreboard", secondary: "" };
     }
     return null;   // while playing there is no overlay
@@ -2996,7 +3000,7 @@
   const GAME_SPEED = (function () {
     const found = location.search.match(/[?&]speed=([0-9.]+)/);
     const asked = found ? parseFloat(found[1]) : NaN;
-    return (asked >= 0.3 && asked <= 6) ? asked : 2.4;
+    return (asked >= 0.3 && asked <= 6) ? asked : 2.0;
   })();
   const STEPS_PER_SECOND  = 60 * GAME_SPEED;   // physics steps per REAL second
   const MAX_CATCHUP_STEPS = 12;  // if a phone stalls, never try to catch up more than this many steps at once
