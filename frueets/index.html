@@ -350,8 +350,17 @@
     }
     /* After a win the frame gives one happy little bounce (once, not a flashing light). */
     #boardWrap.celebrate { animation: happy 0.6s ease-out 1; }
+    /* NEW IN 14a: the board tilts when Tilt is used. --tilt is set by the page (positive = clockwise = right side down). */
+    #boardWrap.tilting { transform-origin: 50% 85%; animation: tilt 0.7s ease-out 1; }
+    @keyframes tilt {
+      0%   { transform: rotate(0deg); }
+      18%  { transform: rotate(var(--tilt)); }
+      50%  { transform: rotate(calc(var(--tilt) * 0.55)); }
+      80%  { transform: rotate(calc(var(--tilt) * -0.12)); }
+      100% { transform: rotate(0deg); }
+    }
     @keyframes happy { 0% { transform: scale(1); } 35% { transform: scale(1.025); } 100% { transform: scale(1); } }
-    @media (prefers-reduced-motion: reduce) { #boardWrap.celebrate, #hero img, #startBtn, .slot.filled { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { #boardWrap.celebrate, #boardWrap.tilting, #hero img, #startBtn, .slot.filled { animation: none; } }
     #board { width: 100%; height: 100%; display: block; }   /* frame has the same shape, so no letterbox gaps */
 
     /* The message line floats over the empty top of the board (above the pegs). */
@@ -406,7 +415,6 @@
 
     /* The bottom row: a small Shuffle button, the big pull button, and a round menu button. */
     .pullRow { display: flex; gap: 8px; align-items: stretch; }
-    #reshuffleBtn { flex: none; width: 74px; padding: 4px; font-size: 16px; line-height: 1.05; }
     #menuBtn { flex: none; width: 54px; padding: 0; font-size: 26px; line-height: 1; }
     #pullBtn {
       flex: 1;
@@ -444,7 +452,7 @@
     @keyframes slideUp { 0% { transform: translateY(40%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
     /* ---------- PAY TABLE SCREEN ---------- */
-    #payModal {
+    #payModal, #howModal {
       position: fixed;
       inset: 0;
       background: rgba(60, 24, 130, 0.60);
@@ -454,7 +462,7 @@
       padding: 14px;
       z-index: 10;
     }
-    #payCard {
+    #payCard, #howCard {
       background: #fff;
       border-radius: 26px;
       padding: 16px;
@@ -471,6 +479,15 @@
     .fruit { display: inline-block; vertical-align: middle; }
     td .fruit { margin-right: 2px; }
     td .plain { font-size: 16px; white-space: nowrap; }
+    /* NEW IN 10: the bet picker on the overlay, the Tilt button, and the How-to-play text */
+    #betRow { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 10px; }
+    #betRow button { width: 52px; padding: 4px; font-size: 28px; line-height: 1; }
+    #betVal { font-family: var(--display); font-size: 34px; color: var(--ink); min-width: 70px; }
+    #betLabel { font-size: 13px; font-weight: 800; color: var(--ink-soft); margin-top: 8px; }
+    #tiltBtn { flex: none; width: 74px; padding: 4px; font-size: 16px; line-height: 1.05; }
+    #howCard h3 { font-family: var(--display); font-weight: 400; font-size: 18px; color: #f0357f; margin: 12px 0 4px; }
+    #howCard p, #howCard li { font-size: 16px; line-height: 1.4; margin: 3px 0; }
+    #howCard ul { padding-left: 20px; margin: 4px 0; }
   </style>
 </head>
 <body>
@@ -507,6 +524,7 @@
     </div>
 
     <div class="linkRow">
+      <button id="howBtnHome" class="link">How to play</button>
       <button id="payBtnHome" class="link">Pay table</button>
       <button id="muteBtnHome" class="link"></button>
       <button id="resetBtn" class="link">Reset scoreboard</button>
@@ -541,6 +559,12 @@
         <div id="overlayCard">
           <div id="ovTitle"></div>
           <div id="ovLines"></div>
+          <div id="betLabel" class="hidden">Your bet</div>
+          <div id="betRow" class="hidden">
+            <button id="betDown" class="secondary" aria-label="Lower the bet">&minus;</button>
+            <div id="betVal"></div>
+            <button id="betUp" class="secondary" aria-label="Raise the bet">+</button>
+          </div>
           <div id="ovButtons">
             <button id="ovPrimary" class="primary"></button>
             <button id="ovSecondary" class="secondary cloud"></button>
@@ -552,7 +576,7 @@
 
     <div id="gauge"><div id="gaugeFill"></div></div>
     <div class="pullRow">
-      <button id="reshuffleBtn" class="secondary">Shuffle cups</button>
+      <button id="tiltBtn" class="secondary">Tilt</button>
       <button id="pullBtn" class="btn">HOLD TO PULL</button>
       <button id="menuBtn" class="secondary" aria-label="Menu">&#9776;</button>
     </div>
@@ -561,10 +585,21 @@
   <!-- NEW IN 9: the menu (Pay table, Sound, End game) -->
   <div id="menuSheet" class="hidden">
     <div id="menuCard">
+      <button id="howBtn" class="secondary">How to play</button>
       <button id="payBtn" class="secondary">Pay table</button>
+      <button id="reshuffleBtn" class="secondary">Shuffle cups</button>
       <button id="muteBtnGame" class="secondary orange"></button>
       <button id="endBtn" class="secondary pink">End game</button>
       <button id="menuClose" class="secondary cloud">Back to the game</button>
+    </div>
+  </div>
+
+  <!-- NEW IN 10: HOW TO PLAY (the text is written by buildHowToPlay, so the numbers always match the settings) -->
+  <div id="howModal" class="hidden">
+    <div id="howCard">
+      <h2>How to play</h2>
+      <div id="howText"></div>
+      <button id="howClose" class="primary" style="margin-top:12px">Got it</button>
     </div>
   </div>
 
@@ -587,6 +622,359 @@
  * License MIT
  */
 !function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define("Matter",[],t):"object"==typeof exports?exports.Matter=t():e.Matter=t()}(this,(function(){return function(e){var t={};function n(i){if(t[i])return t[i].exports;var o=t[i]={i:i,l:!1,exports:{}};return e[i].call(o.exports,o,o.exports,n),o.l=!0,o.exports}return n.m=e,n.c=t,n.d=function(e,t,i){n.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:i})},n.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},n.t=function(e,t){if(1&t&&(e=n(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var i=Object.create(null);if(n.r(i),Object.defineProperty(i,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var o in e)n.d(i,o,function(t){return e[t]}.bind(null,o));return i},n.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return n.d(t,"a",t),t},n.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},n.p="",n(n.s=20)}([function(e,t){var n={};e.exports=n,function(){n._baseDelta=1e3/60,n._nextId=0,n._seed=0,n._nowStartTime=+new Date,n._warnedOnce={},n._decomp=null,n.extend=function(e,t){var i,o;"boolean"==typeof t?(i=2,o=t):(i=1,o=!0);for(var r=i;r<arguments.length;r++){var a=arguments[r];if(a)for(var s in a)o&&a[s]&&a[s].constructor===Object?e[s]&&e[s].constructor!==Object?e[s]=a[s]:(e[s]=e[s]||{},n.extend(e[s],o,a[s])):e[s]=a[s]}return e},n.clone=function(e,t){return n.extend({},t,e)},n.keys=function(e){if(Object.keys)return Object.keys(e);var t=[];for(var n in e)t.push(n);return t},n.values=function(e){var t=[];if(Object.keys){for(var n=Object.keys(e),i=0;i<n.length;i++)t.push(e[n[i]]);return t}for(var o in e)t.push(e[o]);return t},n.get=function(e,t,n,i){t=t.split(".").slice(n,i);for(var o=0;o<t.length;o+=1)e=e[t[o]];return e},n.set=function(e,t,i,o,r){var a=t.split(".").slice(o,r);return n.get(e,t,0,-1)[a[a.length-1]]=i,i},n.shuffle=function(e){for(var t=e.length-1;t>0;t--){var i=Math.floor(n.random()*(t+1)),o=e[t];e[t]=e[i],e[i]=o}return e},n.choose=function(e){return e[Math.floor(n.random()*e.length)]},n.isElement=function(e){return"undefined"!=typeof HTMLElement?e instanceof HTMLElement:!!(e&&e.nodeType&&e.nodeName)},n.isArray=function(e){return"[object Array]"===Object.prototype.toString.call(e)},n.isFunction=function(e){return"function"==typeof e},n.isPlainObject=function(e){return"object"==typeof e&&e.constructor===Object},n.isString=function(e){return"[object String]"===toString.call(e)},n.clamp=function(e,t,n){return e<t?t:e>n?n:e},n.sign=function(e){return e<0?-1:1},n.now=function(){if("undefined"!=typeof window&&window.performance){if(window.performance.now)return window.performance.now();if(window.performance.webkitNow)return window.performance.webkitNow()}return Date.now?Date.now():new Date-n._nowStartTime},n.random=function(t,n){return n=void 0!==n?n:1,(t=void 0!==t?t:0)+e()*(n-t)};var e=function(){return n._seed=(9301*n._seed+49297)%233280,n._seed/233280};n.colorToNumber=function(e){return 3==(e=e.replace("#","")).length&&(e=e.charAt(0)+e.charAt(0)+e.charAt(1)+e.charAt(1)+e.charAt(2)+e.charAt(2)),parseInt(e,16)},n.logLevel=1,n.log=function(){console&&n.logLevel>0&&n.logLevel<=3&&console.log.apply(console,["matter-js:"].concat(Array.prototype.slice.call(arguments)))},n.info=function(){console&&n.logLevel>0&&n.logLevel<=2&&console.info.apply(console,["matter-js:"].concat(Array.prototype.slice.call(arguments)))},n.warn=function(){console&&n.logLevel>0&&n.logLevel<=3&&console.warn.apply(console,["matter-js:"].concat(Array.prototype.slice.call(arguments)))},n.warnOnce=function(){var e=Array.prototype.slice.call(arguments).join(" ");n._warnedOnce[e]||(n.warn(e),n._warnedOnce[e]=!0)},n.deprecated=function(e,t,i){e[t]=n.chain((function(){n.warnOnce("🔅 deprecated 🔅",i)}),e[t])},n.nextId=function(){return n._nextId++},n.indexOf=function(e,t){if(e.indexOf)return e.indexOf(t);for(var n=0;n<e.length;n++)if(e[n]===t)return n;return-1},n.map=function(e,t){if(e.map)return e.map(t);for(var n=[],i=0;i<e.length;i+=1)n.push(t(e[i]));return n},n.topologicalSort=function(e){var t=[],i=[],o=[];for(var r in e)i[r]||o[r]||n._topologicalSort(r,i,o,e,t);return t},n._topologicalSort=function(e,t,i,o,r){var a=o[e]||[];i[e]=!0;for(var s=0;s<a.length;s+=1){var l=a[s];i[l]||(t[l]||n._topologicalSort(l,t,i,o,r))}i[e]=!1,t[e]=!0,r.push(e)},n.chain=function(){for(var e=[],t=0;t<arguments.length;t+=1){var n=arguments[t];n._chained?e.push.apply(e,n._chained):e.push(n)}var i=function(){for(var t,n=new Array(arguments.length),i=0,o=arguments.length;i<o;i++)n[i]=arguments[i];for(i=0;i<e.length;i+=1){var r=e[i].apply(t,n);void 0!==r&&(t=r)}return t};return i._chained=e,i},n.chainPathBefore=function(e,t,i){return n.set(e,t,n.chain(i,n.get(e,t)))},n.chainPathAfter=function(e,t,i){return n.set(e,t,n.chain(n.get(e,t),i))},n.setDecomp=function(e){n._decomp=e},n.getDecomp=function(){var e=n._decomp;try{e||"undefined"==typeof window||(e=window.decomp),e||"undefined"==typeof global||(e=global.decomp)}catch(t){e=null}return e}}()},function(e,t){var n={};e.exports=n,n.create=function(e){var t={min:{x:0,y:0},max:{x:0,y:0}};return e&&n.update(t,e),t},n.update=function(e,t,n){e.min.x=1/0,e.max.x=-1/0,e.min.y=1/0,e.max.y=-1/0;for(var i=0;i<t.length;i++){var o=t[i];o.x>e.max.x&&(e.max.x=o.x),o.x<e.min.x&&(e.min.x=o.x),o.y>e.max.y&&(e.max.y=o.y),o.y<e.min.y&&(e.min.y=o.y)}n&&(n.x>0?e.max.x+=n.x:e.min.x+=n.x,n.y>0?e.max.y+=n.y:e.min.y+=n.y)},n.contains=function(e,t){return t.x>=e.min.x&&t.x<=e.max.x&&t.y>=e.min.y&&t.y<=e.max.y},n.overlaps=function(e,t){return e.min.x<=t.max.x&&e.max.x>=t.min.x&&e.max.y>=t.min.y&&e.min.y<=t.max.y},n.translate=function(e,t){e.min.x+=t.x,e.max.x+=t.x,e.min.y+=t.y,e.max.y+=t.y},n.shift=function(e,t){var n=e.max.x-e.min.x,i=e.max.y-e.min.y;e.min.x=t.x,e.max.x=t.x+n,e.min.y=t.y,e.max.y=t.y+i}},function(e,t){var n={};e.exports=n,n.create=function(e,t){return{x:e||0,y:t||0}},n.clone=function(e){return{x:e.x,y:e.y}},n.magnitude=function(e){return Math.sqrt(e.x*e.x+e.y*e.y)},n.magnitudeSquared=function(e){return e.x*e.x+e.y*e.y},n.rotate=function(e,t,n){var i=Math.cos(t),o=Math.sin(t);n||(n={});var r=e.x*i-e.y*o;return n.y=e.x*o+e.y*i,n.x=r,n},n.rotateAbout=function(e,t,n,i){var o=Math.cos(t),r=Math.sin(t);i||(i={});var a=n.x+((e.x-n.x)*o-(e.y-n.y)*r);return i.y=n.y+((e.x-n.x)*r+(e.y-n.y)*o),i.x=a,i},n.normalise=function(e){var t=n.magnitude(e);return 0===t?{x:0,y:0}:{x:e.x/t,y:e.y/t}},n.dot=function(e,t){return e.x*t.x+e.y*t.y},n.cross=function(e,t){return e.x*t.y-e.y*t.x},n.cross3=function(e,t,n){return(t.x-e.x)*(n.y-e.y)-(t.y-e.y)*(n.x-e.x)},n.add=function(e,t,n){return n||(n={}),n.x=e.x+t.x,n.y=e.y+t.y,n},n.sub=function(e,t,n){return n||(n={}),n.x=e.x-t.x,n.y=e.y-t.y,n},n.mult=function(e,t){return{x:e.x*t,y:e.y*t}},n.div=function(e,t){return{x:e.x/t,y:e.y/t}},n.perp=function(e,t){return{x:(t=!0===t?-1:1)*-e.y,y:t*e.x}},n.neg=function(e){return{x:-e.x,y:-e.y}},n.angle=function(e,t){return Math.atan2(t.y-e.y,t.x-e.x)},n._temp=[n.create(),n.create(),n.create(),n.create(),n.create(),n.create()]},function(e,t,n){var i={};e.exports=i;var o=n(2),r=n(0);i.create=function(e,t){for(var n=[],i=0;i<e.length;i++){var o=e[i],r={x:o.x,y:o.y,index:i,body:t,isInternal:!1};n.push(r)}return n},i.fromPath=function(e,t){var n=[];return e.replace(/L?\s*([-\d.e]+)[\s,]*([-\d.e]+)*/gi,(function(e,t,i){n.push({x:parseFloat(t),y:parseFloat(i)})})),i.create(n,t)},i.centre=function(e){for(var t,n,r,a=i.area(e,!0),s={x:0,y:0},l=0;l<e.length;l++)r=(l+1)%e.length,t=o.cross(e[l],e[r]),n=o.mult(o.add(e[l],e[r]),t),s=o.add(s,n);return o.div(s,6*a)},i.mean=function(e){for(var t={x:0,y:0},n=0;n<e.length;n++)t.x+=e[n].x,t.y+=e[n].y;return o.div(t,e.length)},i.area=function(e,t){for(var n=0,i=e.length-1,o=0;o<e.length;o++)n+=(e[i].x-e[o].x)*(e[i].y+e[o].y),i=o;return t?n/2:Math.abs(n)/2},i.inertia=function(e,t){for(var n,i,r=0,a=0,s=e,l=0;l<s.length;l++)i=(l+1)%s.length,r+=(n=Math.abs(o.cross(s[i],s[l])))*(o.dot(s[i],s[i])+o.dot(s[i],s[l])+o.dot(s[l],s[l])),a+=n;return t/6*(r/a)},i.translate=function(e,t,n){n=void 0!==n?n:1;var i,o=e.length,r=t.x*n,a=t.y*n;for(i=0;i<o;i++)e[i].x+=r,e[i].y+=a;return e},i.rotate=function(e,t,n){if(0!==t){var i,o,r,a,s=Math.cos(t),l=Math.sin(t),c=n.x,u=n.y,d=e.length;for(a=0;a<d;a++)o=(i=e[a]).x-c,r=i.y-u,i.x=c+(o*s-r*l),i.y=u+(o*l+r*s);return e}},i.contains=function(e,t){for(var n,i=t.x,o=t.y,r=e.length,a=e[r-1],s=0;s<r;s++){if(n=e[s],(i-a.x)*(n.y-a.y)+(o-a.y)*(a.x-n.x)>0)return!1;a=n}return!0},i.scale=function(e,t,n,r){if(1===t&&1===n)return e;var a,s;r=r||i.centre(e);for(var l=0;l<e.length;l++)a=e[l],s=o.sub(a,r),e[l].x=r.x+s.x*t,e[l].y=r.y+s.y*n;return e},i.chamfer=function(e,t,n,i,a){t="number"==typeof t?[t]:t||[8],n=void 0!==n?n:-1,i=i||2,a=a||14;for(var s=[],l=0;l<e.length;l++){var c=e[l-1>=0?l-1:e.length-1],u=e[l],d=e[(l+1)%e.length],p=t[l<t.length?l:t.length-1];if(0!==p){var f=o.normalise({x:u.y-c.y,y:c.x-u.x}),v=o.normalise({x:d.y-u.y,y:u.x-d.x}),y=Math.sqrt(2*Math.pow(p,2)),m=o.mult(r.clone(f),p),g=o.normalise(o.mult(o.add(f,v),.5)),x=o.sub(u,o.mult(g,y)),h=n;-1===n&&(h=1.75*Math.pow(p,.32)),(h=r.clamp(h,i,a))%2==1&&(h+=1);for(var b=Math.acos(o.dot(f,v))/h,S=0;S<h;S++)s.push(o.add(o.rotate(m,b*S),x))}else s.push(u)}return s},i.clockwiseSort=function(e){var t=i.mean(e);return e.sort((function(e,n){return o.angle(t,e)-o.angle(t,n)})),e},i.isConvex=function(e){var t,n,i,o,r=0,a=e.length;if(a<3)return null;for(t=0;t<a;t++)if(i=(t+2)%a,o=(e[n=(t+1)%a].x-e[t].x)*(e[i].y-e[n].y),(o-=(e[n].y-e[t].y)*(e[i].x-e[n].x))<0?r|=1:o>0&&(r|=2),3===r)return!1;return 0!==r||null},i.hull=function(e){var t,n,i=[],r=[];for((e=e.slice(0)).sort((function(e,t){var n=e.x-t.x;return 0!==n?n:e.y-t.y})),n=0;n<e.length;n+=1){for(t=e[n];r.length>=2&&o.cross3(r[r.length-2],r[r.length-1],t)<=0;)r.pop();r.push(t)}for(n=e.length-1;n>=0;n-=1){for(t=e[n];i.length>=2&&o.cross3(i[i.length-2],i[i.length-1],t)<=0;)i.pop();i.push(t)}return i.pop(),r.pop(),i.concat(r)}},function(e,t,n){var i={};e.exports=i;var o=n(3),r=n(2),a=n(7),s=n(0),l=n(1),c=n(11);!function(){i._timeCorrection=!0,i._inertiaScale=4,i._nextCollidingGroupId=1,i._nextNonCollidingGroupId=-1,i._nextCategory=1,i._baseDelta=1e3/60,i.create=function(t){var n={id:s.nextId(),type:"body",label:"Body",parts:[],plugin:{},angle:0,vertices:o.fromPath("L 0 0 L 40 0 L 40 40 L 0 40"),position:{x:0,y:0},force:{x:0,y:0},torque:0,positionImpulse:{x:0,y:0},constraintImpulse:{x:0,y:0,angle:0},totalContacts:0,speed:0,angularSpeed:0,velocity:{x:0,y:0},angularVelocity:0,isSensor:!1,isStatic:!1,isSleeping:!1,motion:0,sleepThreshold:60,density:.001,restitution:0,friction:.1,frictionStatic:.5,frictionAir:.01,collisionFilter:{category:1,mask:4294967295,group:0},slop:.05,timeScale:1,render:{visible:!0,opacity:1,strokeStyle:null,fillStyle:null,lineWidth:null,sprite:{xScale:1,yScale:1,xOffset:0,yOffset:0}},events:null,bounds:null,chamfer:null,circleRadius:0,positionPrev:null,anglePrev:0,parent:null,axes:null,area:0,mass:0,inertia:0,deltaTime:1e3/60,_original:null},i=s.extend(n,t);return e(i,t),i},i.nextGroup=function(e){return e?i._nextNonCollidingGroupId--:i._nextCollidingGroupId++},i.nextCategory=function(){return i._nextCategory=i._nextCategory<<1,i._nextCategory};var e=function(e,t){t=t||{},i.set(e,{bounds:e.bounds||l.create(e.vertices),positionPrev:e.positionPrev||r.clone(e.position),anglePrev:e.anglePrev||e.angle,vertices:e.vertices,parts:e.parts||[e],isStatic:e.isStatic,isSleeping:e.isSleeping,parent:e.parent||e}),o.rotate(e.vertices,e.angle,e.position),c.rotate(e.axes,e.angle),l.update(e.bounds,e.vertices,e.velocity),i.set(e,{axes:t.axes||e.axes,area:t.area||e.area,mass:t.mass||e.mass,inertia:t.inertia||e.inertia});var n=e.isStatic?"#14151f":s.choose(["#f19648","#f5d259","#f55a3c","#063e7b","#ececd1"]),a=e.isStatic?"#555":"#ccc",u=e.isStatic&&null===e.render.fillStyle?1:0;e.render.fillStyle=e.render.fillStyle||n,e.render.strokeStyle=e.render.strokeStyle||a,e.render.lineWidth=e.render.lineWidth||u,e.render.sprite.xOffset+=-(e.bounds.min.x-e.position.x)/(e.bounds.max.x-e.bounds.min.x),e.render.sprite.yOffset+=-(e.bounds.min.y-e.position.y)/(e.bounds.max.y-e.bounds.min.y)};i.set=function(e,t,n){var o;for(o in"string"==typeof t&&(o=t,(t={})[o]=n),t)if(Object.prototype.hasOwnProperty.call(t,o))switch(n=t[o],o){case"isStatic":i.setStatic(e,n);break;case"isSleeping":a.set(e,n);break;case"mass":i.setMass(e,n);break;case"density":i.setDensity(e,n);break;case"inertia":i.setInertia(e,n);break;case"vertices":i.setVertices(e,n);break;case"position":i.setPosition(e,n);break;case"angle":i.setAngle(e,n);break;case"velocity":i.setVelocity(e,n);break;case"angularVelocity":i.setAngularVelocity(e,n);break;case"speed":i.setSpeed(e,n);break;case"angularSpeed":i.setAngularSpeed(e,n);break;case"parts":i.setParts(e,n);break;case"centre":i.setCentre(e,n);break;default:e[o]=n}},i.setStatic=function(e,t){for(var n=0;n<e.parts.length;n++){var i=e.parts[n];i.isStatic=t,t?(i._original={restitution:i.restitution,friction:i.friction,mass:i.mass,inertia:i.inertia,density:i.density,inverseMass:i.inverseMass,inverseInertia:i.inverseInertia},i.restitution=0,i.friction=1,i.mass=i.inertia=i.density=1/0,i.inverseMass=i.inverseInertia=0,i.positionPrev.x=i.position.x,i.positionPrev.y=i.position.y,i.anglePrev=i.angle,i.angularVelocity=0,i.speed=0,i.angularSpeed=0,i.motion=0):i._original&&(i.restitution=i._original.restitution,i.friction=i._original.friction,i.mass=i._original.mass,i.inertia=i._original.inertia,i.density=i._original.density,i.inverseMass=i._original.inverseMass,i.inverseInertia=i._original.inverseInertia,i._original=null)}},i.setMass=function(e,t){var n=e.inertia/(e.mass/6);e.inertia=n*(t/6),e.inverseInertia=1/e.inertia,e.mass=t,e.inverseMass=1/e.mass,e.density=e.mass/e.area},i.setDensity=function(e,t){i.setMass(e,t*e.area),e.density=t},i.setInertia=function(e,t){e.inertia=t,e.inverseInertia=1/e.inertia},i.setVertices=function(e,t){t[0].body===e?e.vertices=t:e.vertices=o.create(t,e),e.axes=c.fromVertices(e.vertices),e.area=o.area(e.vertices),i.setMass(e,e.density*e.area);var n=o.centre(e.vertices);o.translate(e.vertices,n,-1),i.setInertia(e,i._inertiaScale*o.inertia(e.vertices,e.mass)),o.translate(e.vertices,e.position),l.update(e.bounds,e.vertices,e.velocity)},i.setParts=function(e,t,n){var r;for(t=t.slice(0),e.parts.length=0,e.parts.push(e),e.parent=e,r=0;r<t.length;r++){var a=t[r];a!==e&&(a.parent=e,e.parts.push(a))}if(1!==e.parts.length){if(n=void 0===n||n){var s=[];for(r=0;r<t.length;r++)s=s.concat(t[r].vertices);o.clockwiseSort(s);var l=o.hull(s),c=o.centre(l);i.setVertices(e,l),o.translate(e.vertices,c)}var u=i._totalProperties(e);e.area=u.area,e.parent=e,e.position.x=u.centre.x,e.position.y=u.centre.y,e.positionPrev.x=u.centre.x,e.positionPrev.y=u.centre.y,i.setMass(e,u.mass),i.setInertia(e,u.inertia),i.setPosition(e,u.centre)}},i.setCentre=function(e,t,n){n?(e.positionPrev.x+=t.x,e.positionPrev.y+=t.y,e.position.x+=t.x,e.position.y+=t.y):(e.positionPrev.x=t.x-(e.position.x-e.positionPrev.x),e.positionPrev.y=t.y-(e.position.y-e.positionPrev.y),e.position.x=t.x,e.position.y=t.y)},i.setPosition=function(e,t,n){var i=r.sub(t,e.position);n?(e.positionPrev.x=e.position.x,e.positionPrev.y=e.position.y,e.velocity.x=i.x,e.velocity.y=i.y,e.speed=r.magnitude(i)):(e.positionPrev.x+=i.x,e.positionPrev.y+=i.y);for(var a=0;a<e.parts.length;a++){var s=e.parts[a];s.position.x+=i.x,s.position.y+=i.y,o.translate(s.vertices,i),l.update(s.bounds,s.vertices,e.velocity)}},i.setAngle=function(e,t,n){var i=t-e.angle;n?(e.anglePrev=e.angle,e.angularVelocity=i,e.angularSpeed=Math.abs(i)):e.anglePrev+=i;for(var a=0;a<e.parts.length;a++){var s=e.parts[a];s.angle+=i,o.rotate(s.vertices,i,e.position),c.rotate(s.axes,i),l.update(s.bounds,s.vertices,e.velocity),a>0&&r.rotateAbout(s.position,i,e.position,s.position)}},i.setVelocity=function(e,t){var n=e.deltaTime/i._baseDelta;e.positionPrev.x=e.position.x-t.x*n,e.positionPrev.y=e.position.y-t.y*n,e.velocity.x=(e.position.x-e.positionPrev.x)/n,e.velocity.y=(e.position.y-e.positionPrev.y)/n,e.speed=r.magnitude(e.velocity)},i.getVelocity=function(e){var t=i._baseDelta/e.deltaTime;return{x:(e.position.x-e.positionPrev.x)*t,y:(e.position.y-e.positionPrev.y)*t}},i.getSpeed=function(e){return r.magnitude(i.getVelocity(e))},i.setSpeed=function(e,t){i.setVelocity(e,r.mult(r.normalise(i.getVelocity(e)),t))},i.setAngularVelocity=function(e,t){var n=e.deltaTime/i._baseDelta;e.anglePrev=e.angle-t*n,e.angularVelocity=(e.angle-e.anglePrev)/n,e.angularSpeed=Math.abs(e.angularVelocity)},i.getAngularVelocity=function(e){return(e.angle-e.anglePrev)*i._baseDelta/e.deltaTime},i.getAngularSpeed=function(e){return Math.abs(i.getAngularVelocity(e))},i.setAngularSpeed=function(e,t){i.setAngularVelocity(e,s.sign(i.getAngularVelocity(e))*t)},i.translate=function(e,t,n){i.setPosition(e,r.add(e.position,t),n)},i.rotate=function(e,t,n,o){if(n){var r=Math.cos(t),a=Math.sin(t),s=e.position.x-n.x,l=e.position.y-n.y;i.setPosition(e,{x:n.x+(s*r-l*a),y:n.y+(s*a+l*r)},o),i.setAngle(e,e.angle+t,o)}else i.setAngle(e,e.angle+t,o)},i.scale=function(e,t,n,r){var a=0,s=0;r=r||e.position;for(var u=0;u<e.parts.length;u++){var d=e.parts[u];o.scale(d.vertices,t,n,r),d.axes=c.fromVertices(d.vertices),d.area=o.area(d.vertices),i.setMass(d,e.density*d.area),o.translate(d.vertices,{x:-d.position.x,y:-d.position.y}),i.setInertia(d,i._inertiaScale*o.inertia(d.vertices,d.mass)),o.translate(d.vertices,{x:d.position.x,y:d.position.y}),u>0&&(a+=d.area,s+=d.inertia),d.position.x=r.x+(d.position.x-r.x)*t,d.position.y=r.y+(d.position.y-r.y)*n,l.update(d.bounds,d.vertices,e.velocity)}e.parts.length>1&&(e.area=a,e.isStatic||(i.setMass(e,e.density*a),i.setInertia(e,s))),e.circleRadius&&(t===n?e.circleRadius*=t:e.circleRadius=null)},i.update=function(e,t){var n=(t=(void 0!==t?t:1e3/60)*e.timeScale)*t,a=i._timeCorrection?t/(e.deltaTime||t):1,u=1-e.frictionAir*(t/s._baseDelta),d=(e.position.x-e.positionPrev.x)*a,p=(e.position.y-e.positionPrev.y)*a;e.velocity.x=d*u+e.force.x/e.mass*n,e.velocity.y=p*u+e.force.y/e.mass*n,e.positionPrev.x=e.position.x,e.positionPrev.y=e.position.y,e.position.x+=e.velocity.x,e.position.y+=e.velocity.y,e.deltaTime=t,e.angularVelocity=(e.angle-e.anglePrev)*u*a+e.torque/e.inertia*n,e.anglePrev=e.angle,e.angle+=e.angularVelocity;for(var f=0;f<e.parts.length;f++){var v=e.parts[f];o.translate(v.vertices,e.velocity),f>0&&(v.position.x+=e.velocity.x,v.position.y+=e.velocity.y),0!==e.angularVelocity&&(o.rotate(v.vertices,e.angularVelocity,e.position),c.rotate(v.axes,e.angularVelocity),f>0&&r.rotateAbout(v.position,e.angularVelocity,e.position,v.position)),l.update(v.bounds,v.vertices,e.velocity)}},i.updateVelocities=function(e){var t=i._baseDelta/e.deltaTime,n=e.velocity;n.x=(e.position.x-e.positionPrev.x)*t,n.y=(e.position.y-e.positionPrev.y)*t,e.speed=Math.sqrt(n.x*n.x+n.y*n.y),e.angularVelocity=(e.angle-e.anglePrev)*t,e.angularSpeed=Math.abs(e.angularVelocity)},i.applyForce=function(e,t,n){var i=t.x-e.position.x,o=t.y-e.position.y;e.force.x+=n.x,e.force.y+=n.y,e.torque+=i*n.y-o*n.x},i._totalProperties=function(e){for(var t={mass:0,area:0,inertia:0,centre:{x:0,y:0}},n=1===e.parts.length?0:1;n<e.parts.length;n++){var i=e.parts[n],o=i.mass!==1/0?i.mass:1;t.mass+=o,t.area+=i.area,t.inertia+=i.inertia,t.centre=r.add(t.centre,r.mult(i.position,o))}return t.centre=r.div(t.centre,t.mass),t}}()},function(e,t,n){var i={};e.exports=i;var o=n(0);i.on=function(e,t,n){for(var i,o=t.split(" "),r=0;r<o.length;r++)i=o[r],e.events=e.events||{},e.events[i]=e.events[i]||[],e.events[i].push(n);return n},i.off=function(e,t,n){if(t){"function"==typeof t&&(n=t,t=o.keys(e.events).join(" "));for(var i=t.split(" "),r=0;r<i.length;r++){var a=e.events[i[r]],s=[];if(n&&a)for(var l=0;l<a.length;l++)a[l]!==n&&s.push(a[l]);e.events[i[r]]=s}}else e.events={}},i.trigger=function(e,t,n){var i,r,a,s,l=e.events;if(l&&o.keys(l).length>0){n||(n={}),i=t.split(" ");for(var c=0;c<i.length;c++)if(a=l[r=i[c]]){(s=o.clone(n,!1)).name=r,s.source=e;for(var u=0;u<a.length;u++)a[u].apply(e,[s])}}}},function(e,t,n){var i={};e.exports=i;var o=n(5),r=n(0),a=n(1),s=n(4);i.create=function(e){return r.extend({id:r.nextId(),type:"composite",parent:null,isModified:!1,bodies:[],constraints:[],composites:[],label:"Composite",plugin:{},cache:{allBodies:null,allConstraints:null,allComposites:null}},e)},i.setModified=function(e,t,n,o){if(e.isModified=t,t&&e.cache&&(e.cache.allBodies=null,e.cache.allConstraints=null,e.cache.allComposites=null),n&&e.parent&&i.setModified(e.parent,t,n,o),o)for(var r=0;r<e.composites.length;r++){var a=e.composites[r];i.setModified(a,t,n,o)}},i.add=function(e,t){var n=[].concat(t);o.trigger(e,"beforeAdd",{object:t});for(var a=0;a<n.length;a++){var s=n[a];switch(s.type){case"body":if(s.parent!==s){r.warn("Composite.add: skipped adding a compound body part (you must add its parent instead)");break}i.addBody(e,s);break;case"constraint":i.addConstraint(e,s);break;case"composite":i.addComposite(e,s);break;case"mouseConstraint":i.addConstraint(e,s.constraint)}}return o.trigger(e,"afterAdd",{object:t}),e},i.remove=function(e,t,n){var r=[].concat(t);o.trigger(e,"beforeRemove",{object:t});for(var a=0;a<r.length;a++){var s=r[a];switch(s.type){case"body":i.removeBody(e,s,n);break;case"constraint":i.removeConstraint(e,s,n);break;case"composite":i.removeComposite(e,s,n);break;case"mouseConstraint":i.removeConstraint(e,s.constraint)}}return o.trigger(e,"afterRemove",{object:t}),e},i.addComposite=function(e,t){return e.composites.push(t),t.parent=e,i.setModified(e,!0,!0,!1),e},i.removeComposite=function(e,t,n){var o=r.indexOf(e.composites,t);if(-1!==o&&i.removeCompositeAt(e,o),n)for(var a=0;a<e.composites.length;a++)i.removeComposite(e.composites[a],t,!0);return e},i.removeCompositeAt=function(e,t){return e.composites.splice(t,1),i.setModified(e,!0,!0,!1),e},i.addBody=function(e,t){return e.bodies.push(t),i.setModified(e,!0,!0,!1),e},i.removeBody=function(e,t,n){var o=r.indexOf(e.bodies,t);if(-1!==o&&i.removeBodyAt(e,o),n)for(var a=0;a<e.composites.length;a++)i.removeBody(e.composites[a],t,!0);return e},i.removeBodyAt=function(e,t){return e.bodies.splice(t,1),i.setModified(e,!0,!0,!1),e},i.addConstraint=function(e,t){return e.constraints.push(t),i.setModified(e,!0,!0,!1),e},i.removeConstraint=function(e,t,n){var o=r.indexOf(e.constraints,t);if(-1!==o&&i.removeConstraintAt(e,o),n)for(var a=0;a<e.composites.length;a++)i.removeConstraint(e.composites[a],t,!0);return e},i.removeConstraintAt=function(e,t){return e.constraints.splice(t,1),i.setModified(e,!0,!0,!1),e},i.clear=function(e,t,n){if(n)for(var o=0;o<e.composites.length;o++)i.clear(e.composites[o],t,!0);return t?e.bodies=e.bodies.filter((function(e){return e.isStatic})):e.bodies.length=0,e.constraints.length=0,e.composites.length=0,i.setModified(e,!0,!0,!1),e},i.allBodies=function(e){if(e.cache&&e.cache.allBodies)return e.cache.allBodies;for(var t=[].concat(e.bodies),n=0;n<e.composites.length;n++)t=t.concat(i.allBodies(e.composites[n]));return e.cache&&(e.cache.allBodies=t),t},i.allConstraints=function(e){if(e.cache&&e.cache.allConstraints)return e.cache.allConstraints;for(var t=[].concat(e.constraints),n=0;n<e.composites.length;n++)t=t.concat(i.allConstraints(e.composites[n]));return e.cache&&(e.cache.allConstraints=t),t},i.allComposites=function(e){if(e.cache&&e.cache.allComposites)return e.cache.allComposites;for(var t=[].concat(e.composites),n=0;n<e.composites.length;n++)t=t.concat(i.allComposites(e.composites[n]));return e.cache&&(e.cache.allComposites=t),t},i.get=function(e,t,n){var o,r;switch(n){case"body":o=i.allBodies(e);break;case"constraint":o=i.allConstraints(e);break;case"composite":o=i.allComposites(e).concat(e)}return o?0===(r=o.filter((function(e){return e.id.toString()===t.toString()}))).length?null:r[0]:null},i.move=function(e,t,n){return i.remove(e,t),i.add(n,t),e},i.rebase=function(e){for(var t=i.allBodies(e).concat(i.allConstraints(e)).concat(i.allComposites(e)),n=0;n<t.length;n++)t[n].id=r.nextId();return e},i.translate=function(e,t,n){for(var o=n?i.allBodies(e):e.bodies,r=0;r<o.length;r++)s.translate(o[r],t);return e},i.rotate=function(e,t,n,o){for(var r=Math.cos(t),a=Math.sin(t),l=o?i.allBodies(e):e.bodies,c=0;c<l.length;c++){var u=l[c],d=u.position.x-n.x,p=u.position.y-n.y;s.setPosition(u,{x:n.x+(d*r-p*a),y:n.y+(d*a+p*r)}),s.rotate(u,t)}return e},i.scale=function(e,t,n,o,r){for(var a=r?i.allBodies(e):e.bodies,l=0;l<a.length;l++){var c=a[l],u=c.position.x-o.x,d=c.position.y-o.y;s.setPosition(c,{x:o.x+u*t,y:o.y+d*n}),s.scale(c,t,n)}return e},i.bounds=function(e){for(var t=i.allBodies(e),n=[],o=0;o<t.length;o+=1){var r=t[o];n.push(r.bounds.min,r.bounds.max)}return a.create(n)}},function(e,t,n){var i={};e.exports=i;var o=n(4),r=n(5),a=n(0);i._motionWakeThreshold=.18,i._motionSleepThreshold=.08,i._minBias=.9,i.update=function(e,t){for(var n=t/a._baseDelta,r=i._motionSleepThreshold,s=0;s<e.length;s++){var l=e[s],c=o.getSpeed(l),u=o.getAngularSpeed(l),d=c*c+u*u;if(0===l.force.x&&0===l.force.y){var p=Math.min(l.motion,d),f=Math.max(l.motion,d);l.motion=i._minBias*p+(1-i._minBias)*f,l.sleepThreshold>0&&l.motion<r?(l.sleepCounter+=1,l.sleepCounter>=l.sleepThreshold/n&&i.set(l,!0)):l.sleepCounter>0&&(l.sleepCounter-=1)}else i.set(l,!1)}},i.afterCollisions=function(e){for(var t=i._motionSleepThreshold,n=0;n<e.length;n++){var o=e[n];if(o.isActive){var r=o.collision,a=r.bodyA.parent,s=r.bodyB.parent;if(!(a.isSleeping&&s.isSleeping||a.isStatic||s.isStatic)&&(a.isSleeping||s.isSleeping)){var l=a.isSleeping&&!a.isStatic?a:s,c=l===a?s:a;!l.isStatic&&c.motion>t&&i.set(l,!1)}}}},i.set=function(e,t){var n=e.isSleeping;t?(e.isSleeping=!0,e.sleepCounter=e.sleepThreshold,e.positionImpulse.x=0,e.positionImpulse.y=0,e.positionPrev.x=e.position.x,e.positionPrev.y=e.position.y,e.anglePrev=e.angle,e.speed=0,e.angularSpeed=0,e.motion=0,n||r.trigger(e,"sleepStart")):(e.isSleeping=!1,e.sleepCounter=0,n&&r.trigger(e,"sleepEnd"))}},function(e,t,n){var i={};e.exports=i;var o,r,a,s=n(3),l=n(9);o=[],r={overlap:0,axis:null},a={overlap:0,axis:null},i.create=function(e,t){return{pair:null,collided:!1,bodyA:e,bodyB:t,parentA:e.parent,parentB:t.parent,depth:0,normal:{x:0,y:0},tangent:{x:0,y:0},penetration:{x:0,y:0},supports:[]}},i.collides=function(e,t,n){if(i._overlapAxes(r,e.vertices,t.vertices,e.axes),r.overlap<=0)return null;if(i._overlapAxes(a,t.vertices,e.vertices,t.axes),a.overlap<=0)return null;var o,c,u=n&&n.table[l.id(e,t)];u?o=u.collision:((o=i.create(e,t)).collided=!0,o.bodyA=e.id<t.id?e:t,o.bodyB=e.id<t.id?t:e,o.parentA=o.bodyA.parent,o.parentB=o.bodyB.parent),e=o.bodyA,t=o.bodyB,c=r.overlap<a.overlap?r:a;var d=o.normal,p=o.supports,f=c.axis,v=f.x,y=f.y;v*(t.position.x-e.position.x)+y*(t.position.y-e.position.y)<0?(d.x=v,d.y=y):(d.x=-v,d.y=-y),o.tangent.x=-d.y,o.tangent.y=d.x,o.depth=c.overlap,o.penetration.x=d.x*o.depth,o.penetration.y=d.y*o.depth;var m=i._findSupports(e,t,d,1),g=0;if(s.contains(e.vertices,m[0])&&(p[g++]=m[0]),s.contains(e.vertices,m[1])&&(p[g++]=m[1]),g<2){var x=i._findSupports(t,e,d,-1);s.contains(t.vertices,x[0])&&(p[g++]=x[0]),g<2&&s.contains(t.vertices,x[1])&&(p[g++]=x[1])}return 0===g&&(p[g++]=m[0]),p.length=g,o},i._overlapAxes=function(e,t,n,i){var o,r,a,s,l,c,u=t.length,d=n.length,p=t[0].x,f=t[0].y,v=n[0].x,y=n[0].y,m=i.length,g=Number.MAX_VALUE,x=0;for(l=0;l<m;l++){var h=i[l],b=h.x,S=h.y,w=p*b+f*S,A=v*b+y*S,P=w,C=A;for(c=1;c<u;c+=1)(s=t[c].x*b+t[c].y*S)>P?P=s:s<w&&(w=s);for(c=1;c<d;c+=1)(s=n[c].x*b+n[c].y*S)>C?C=s:s<A&&(A=s);if((o=(r=P-A)<(a=C-w)?r:a)<g&&(g=o,x=l,o<=0))break}e.axis=i[x],e.overlap=g},i._projectToAxis=function(e,t,n){for(var i=t[0].x*n.x+t[0].y*n.y,o=i,r=1;r<t.length;r+=1){var a=t[r].x*n.x+t[r].y*n.y;a>o?o=a:a<i&&(i=a)}e.min=i,e.max=o},i._findSupports=function(e,t,n,i){var r,a,s,l,c,u=t.vertices,d=u.length,p=e.position.x,f=e.position.y,v=n.x*i,y=n.y*i,m=Number.MAX_VALUE;for(c=0;c<d;c+=1)(l=v*(p-(a=u[c]).x)+y*(f-a.y))<m&&(m=l,r=a);return m=v*(p-(s=u[(d+r.index-1)%d]).x)+y*(f-s.y),v*(p-(a=u[(r.index+1)%d]).x)+y*(f-a.y)<m?(o[0]=r,o[1]=a,o):(o[0]=r,o[1]=s,o)}},function(e,t,n){var i={};e.exports=i;var o=n(16);i.create=function(e,t){var n=e.bodyA,o=e.bodyB,r={id:i.id(n,o),bodyA:n,bodyB:o,collision:e,contacts:[],activeContacts:[],separation:0,isActive:!0,confirmedActive:!0,isSensor:n.isSensor||o.isSensor,timeCreated:t,timeUpdated:t,inverseMass:0,friction:0,frictionStatic:0,restitution:0,slop:0};return i.update(r,e,t),r},i.update=function(e,t,n){var i=e.contacts,r=t.supports,a=e.activeContacts,s=t.parentA,l=t.parentB,c=s.vertices.length;e.isActive=!0,e.timeUpdated=n,e.collision=t,e.separation=t.depth,e.inverseMass=s.inverseMass+l.inverseMass,e.friction=s.friction<l.friction?s.friction:l.friction,e.frictionStatic=s.frictionStatic>l.frictionStatic?s.frictionStatic:l.frictionStatic,e.restitution=s.restitution>l.restitution?s.restitution:l.restitution,e.slop=s.slop>l.slop?s.slop:l.slop,t.pair=e,a.length=0;for(var u=0;u<r.length;u++){var d=r[u],p=d.body===s?d.index:c+d.index,f=i[p];f?a.push(f):a.push(i[p]=o.create(d))}},i.setActive=function(e,t,n){t?(e.isActive=!0,e.timeUpdated=n):(e.isActive=!1,e.activeContacts.length=0)},i.id=function(e,t){return e.id<t.id?"A"+e.id+"B"+t.id:"A"+t.id+"B"+e.id}},function(e,t,n){var i={};e.exports=i;var o=n(3),r=n(2),a=n(7),s=n(1),l=n(11),c=n(0);i._warming=.4,i._torqueDampen=1,i._minLength=1e-6,i.create=function(e){var t=e;t.bodyA&&!t.pointA&&(t.pointA={x:0,y:0}),t.bodyB&&!t.pointB&&(t.pointB={x:0,y:0});var n=t.bodyA?r.add(t.bodyA.position,t.pointA):t.pointA,i=t.bodyB?r.add(t.bodyB.position,t.pointB):t.pointB,o=r.magnitude(r.sub(n,i));t.length=void 0!==t.length?t.length:o,t.id=t.id||c.nextId(),t.label=t.label||"Constraint",t.type="constraint",t.stiffness=t.stiffness||(t.length>0?1:.7),t.damping=t.damping||0,t.angularStiffness=t.angularStiffness||0,t.angleA=t.bodyA?t.bodyA.angle:t.angleA,t.angleB=t.bodyB?t.bodyB.angle:t.angleB,t.plugin={};var a={visible:!0,lineWidth:2,strokeStyle:"#ffffff",type:"line",anchors:!0};return 0===t.length&&t.stiffness>.1?(a.type="pin",a.anchors=!1):t.stiffness<.9&&(a.type="spring"),t.render=c.extend(a,t.render),t},i.preSolveAll=function(e){for(var t=0;t<e.length;t+=1){var n=e[t],i=n.constraintImpulse;n.isStatic||0===i.x&&0===i.y&&0===i.angle||(n.position.x+=i.x,n.position.y+=i.y,n.angle+=i.angle)}},i.solveAll=function(e,t){for(var n=c.clamp(t/c._baseDelta,0,1),o=0;o<e.length;o+=1){var r=e[o],a=!r.bodyA||r.bodyA&&r.bodyA.isStatic,s=!r.bodyB||r.bodyB&&r.bodyB.isStatic;(a||s)&&i.solve(e[o],n)}for(o=0;o<e.length;o+=1)a=!(r=e[o]).bodyA||r.bodyA&&r.bodyA.isStatic,s=!r.bodyB||r.bodyB&&r.bodyB.isStatic,a||s||i.solve(e[o],n)},i.solve=function(e,t){var n=e.bodyA,o=e.bodyB,a=e.pointA,s=e.pointB;if(n||o){n&&!n.isStatic&&(r.rotate(a,n.angle-e.angleA,a),e.angleA=n.angle),o&&!o.isStatic&&(r.rotate(s,o.angle-e.angleB,s),e.angleB=o.angle);var l=a,c=s;if(n&&(l=r.add(n.position,a)),o&&(c=r.add(o.position,s)),l&&c){var u=r.sub(l,c),d=r.magnitude(u);d<i._minLength&&(d=i._minLength);var p,f,v,y,m,g=(d-e.length)/d,x=e.stiffness>=1||0===e.length?e.stiffness*t:e.stiffness*t*t,h=e.damping*t,b=r.mult(u,g*x),S=(n?n.inverseMass:0)+(o?o.inverseMass:0),w=S+((n?n.inverseInertia:0)+(o?o.inverseInertia:0));if(h>0){var A=r.create();v=r.div(u,d),m=r.sub(o&&r.sub(o.position,o.positionPrev)||A,n&&r.sub(n.position,n.positionPrev)||A),y=r.dot(v,m)}n&&!n.isStatic&&(f=n.inverseMass/S,n.constraintImpulse.x-=b.x*f,n.constraintImpulse.y-=b.y*f,n.position.x-=b.x*f,n.position.y-=b.y*f,h>0&&(n.positionPrev.x-=h*v.x*y*f,n.positionPrev.y-=h*v.y*y*f),p=r.cross(a,b)/w*i._torqueDampen*n.inverseInertia*(1-e.angularStiffness),n.constraintImpulse.angle-=p,n.angle-=p),o&&!o.isStatic&&(f=o.inverseMass/S,o.constraintImpulse.x+=b.x*f,o.constraintImpulse.y+=b.y*f,o.position.x+=b.x*f,o.position.y+=b.y*f,h>0&&(o.positionPrev.x+=h*v.x*y*f,o.positionPrev.y+=h*v.y*y*f),p=r.cross(s,b)/w*i._torqueDampen*o.inverseInertia*(1-e.angularStiffness),o.constraintImpulse.angle+=p,o.angle+=p)}}},i.postSolveAll=function(e){for(var t=0;t<e.length;t++){var n=e[t],c=n.constraintImpulse;if(!(n.isStatic||0===c.x&&0===c.y&&0===c.angle)){a.set(n,!1);for(var u=0;u<n.parts.length;u++){var d=n.parts[u];o.translate(d.vertices,c),u>0&&(d.position.x+=c.x,d.position.y+=c.y),0!==c.angle&&(o.rotate(d.vertices,c.angle,n.position),l.rotate(d.axes,c.angle),u>0&&r.rotateAbout(d.position,c.angle,n.position,d.position)),s.update(d.bounds,d.vertices,n.velocity)}c.angle*=i._warming,c.x*=i._warming,c.y*=i._warming}}},i.pointAWorld=function(e){return{x:(e.bodyA?e.bodyA.position.x:0)+(e.pointA?e.pointA.x:0),y:(e.bodyA?e.bodyA.position.y:0)+(e.pointA?e.pointA.y:0)}},i.pointBWorld=function(e){return{x:(e.bodyB?e.bodyB.position.x:0)+(e.pointB?e.pointB.x:0),y:(e.bodyB?e.bodyB.position.y:0)+(e.pointB?e.pointB.y:0)}}},function(e,t,n){var i={};e.exports=i;var o=n(2),r=n(0);i.fromVertices=function(e){for(var t={},n=0;n<e.length;n++){var i=(n+1)%e.length,a=o.normalise({x:e[i].y-e[n].y,y:e[n].x-e[i].x}),s=0===a.y?1/0:a.x/a.y;t[s=s.toFixed(3).toString()]=a}return r.values(t)},i.rotate=function(e,t){if(0!==t)for(var n=Math.cos(t),i=Math.sin(t),o=0;o<e.length;o++){var r,a=e[o];r=a.x*n-a.y*i,a.y=a.x*i+a.y*n,a.x=r}}},function(e,t,n){var i={};e.exports=i;var o=n(3),r=n(0),a=n(4),s=n(1),l=n(2);i.rectangle=function(e,t,n,i,s){s=s||{};var l={label:"Rectangle Body",position:{x:e,y:t},vertices:o.fromPath("L 0 0 L "+n+" 0 L "+n+" "+i+" L 0 "+i)};if(s.chamfer){var c=s.chamfer;l.vertices=o.chamfer(l.vertices,c.radius,c.quality,c.qualityMin,c.qualityMax),delete s.chamfer}return a.create(r.extend({},l,s))},i.trapezoid=function(e,t,n,i,s,l){l=l||{};var c,u=n*(s*=.5),d=u+(1-2*s)*n,p=d+u;c=s<.5?"L 0 0 L "+u+" "+-i+" L "+d+" "+-i+" L "+p+" 0":"L 0 0 L "+d+" "+-i+" L "+p+" 0";var f={label:"Trapezoid Body",position:{x:e,y:t},vertices:o.fromPath(c)};if(l.chamfer){var v=l.chamfer;f.vertices=o.chamfer(f.vertices,v.radius,v.quality,v.qualityMin,v.qualityMax),delete l.chamfer}return a.create(r.extend({},f,l))},i.circle=function(e,t,n,o,a){o=o||{};var s={label:"Circle Body",circleRadius:n};a=a||25;var l=Math.ceil(Math.max(10,Math.min(a,n)));return l%2==1&&(l+=1),i.polygon(e,t,l,n,r.extend({},s,o))},i.polygon=function(e,t,n,s,l){if(l=l||{},n<3)return i.circle(e,t,s,l);for(var c=2*Math.PI/n,u="",d=.5*c,p=0;p<n;p+=1){var f=d+p*c,v=Math.cos(f)*s,y=Math.sin(f)*s;u+="L "+v.toFixed(3)+" "+y.toFixed(3)+" "}var m={label:"Polygon Body",position:{x:e,y:t},vertices:o.fromPath(u)};if(l.chamfer){var g=l.chamfer;m.vertices=o.chamfer(m.vertices,g.radius,g.quality,g.qualityMin,g.qualityMax),delete l.chamfer}return a.create(r.extend({},m,l))},i.fromVertices=function(e,t,n,i,c,u,d,p){var f,v,y,m,g,x,h,b,S,w,A=r.getDecomp();for(f=Boolean(A&&A.quickDecomp),i=i||{},y=[],c=void 0!==c&&c,u=void 0!==u?u:.01,d=void 0!==d?d:10,p=void 0!==p?p:.01,r.isArray(n[0])||(n=[n]),S=0;S<n.length;S+=1)if(g=n[S],!(m=o.isConvex(g))&&!f&&r.warnOnce("Bodies.fromVertices: Install the 'poly-decomp' library and use Common.setDecomp or provide 'decomp' as a global to decompose concave vertices."),m||!f)g=m?o.clockwiseSort(g):o.hull(g),y.push({position:{x:e,y:t},vertices:g});else{var P=g.map((function(e){return[e.x,e.y]}));A.makeCCW(P),!1!==u&&A.removeCollinearPoints(P,u),!1!==p&&A.removeDuplicatePoints&&A.removeDuplicatePoints(P,p);var C=A.quickDecomp(P);for(x=0;x<C.length;x++){var M=C[x].map((function(e){return{x:e[0],y:e[1]}}));d>0&&o.area(M)<d||y.push({position:o.centre(M),vertices:M})}}for(x=0;x<y.length;x++)y[x]=a.create(r.extend(y[x],i));if(c)for(x=0;x<y.length;x++){var B=y[x];for(h=x+1;h<y.length;h++){var _=y[h];if(s.overlaps(B.bounds,_.bounds)){var k=B.vertices,I=_.vertices;for(b=0;b<B.vertices.length;b++)for(w=0;w<_.vertices.length;w++){var T=l.magnitudeSquared(l.sub(k[(b+1)%k.length],I[w])),R=l.magnitudeSquared(l.sub(k[b],I[(w+1)%I.length]));T<5&&R<5&&(k[b].isInternal=!0,I[w].isInternal=!0)}}}}return y.length>1?(v=a.create(r.extend({parts:y.slice(0)},i)),a.setPosition(v,{x:e,y:t}),v):y[0]}},function(e,t,n){var i={};e.exports=i;var o=n(0),r=n(8);i.create=function(e){return o.extend({bodies:[],pairs:null},e)},i.setBodies=function(e,t){e.bodies=t.slice(0)},i.clear=function(e){e.bodies=[]},i.collisions=function(e){var t,n,o=[],a=e.pairs,s=e.bodies,l=s.length,c=i.canCollide,u=r.collides;for(s.sort(i._compareBoundsX),t=0;t<l;t++){var d=s[t],p=d.bounds,f=d.bounds.max.x,v=d.bounds.max.y,y=d.bounds.min.y,m=d.isStatic||d.isSleeping,g=d.parts.length,x=1===g;for(n=t+1;n<l;n++){var h=s[n];if((B=h.bounds).min.x>f)break;if(!(v<B.min.y||y>B.max.y)&&(!m||!h.isStatic&&!h.isSleeping)&&c(d.collisionFilter,h.collisionFilter)){var b=h.parts.length;if(x&&1===b)(C=u(d,h,a))&&o.push(C);else for(var S=b>1?1:0,w=g>1?1:0;w<g;w++)for(var A=d.parts[w],P=(p=A.bounds,S);P<b;P++){var C,M=h.parts[P],B=M.bounds;p.min.x>B.max.x||p.max.x<B.min.x||p.max.y<B.min.y||p.min.y>B.max.y||(C=u(A,M,a))&&o.push(C)}}}}return o},i.canCollide=function(e,t){return e.group===t.group&&0!==e.group?e.group>0:0!=(e.mask&t.category)&&0!=(t.mask&e.category)},i._compareBoundsX=function(e,t){return e.bounds.min.x-t.bounds.min.x}},function(e,t,n){var i={};e.exports=i;var o=n(0);i.create=function(e){var t={};return e||o.log("Mouse.create: element was undefined, defaulting to document.body","warn"),t.element=e||document.body,t.absolute={x:0,y:0},t.position={x:0,y:0},t.mousedownPosition={x:0,y:0},t.mouseupPosition={x:0,y:0},t.offset={x:0,y:0},t.scale={x:1,y:1},t.wheelDelta=0,t.button=-1,t.pixelRatio=parseInt(t.element.getAttribute("data-pixel-ratio"),10)||1,t.sourceEvents={mousemove:null,mousedown:null,mouseup:null,mousewheel:null},t.mousemove=function(e){var n=i._getRelativeMousePosition(e,t.element,t.pixelRatio);e.changedTouches&&(t.button=0,e.preventDefault()),t.absolute.x=n.x,t.absolute.y=n.y,t.position.x=t.absolute.x*t.scale.x+t.offset.x,t.position.y=t.absolute.y*t.scale.y+t.offset.y,t.sourceEvents.mousemove=e},t.mousedown=function(e){var n=i._getRelativeMousePosition(e,t.element,t.pixelRatio);e.changedTouches?(t.button=0,e.preventDefault()):t.button=e.button,t.absolute.x=n.x,t.absolute.y=n.y,t.position.x=t.absolute.x*t.scale.x+t.offset.x,t.position.y=t.absolute.y*t.scale.y+t.offset.y,t.mousedownPosition.x=t.position.x,t.mousedownPosition.y=t.position.y,t.sourceEvents.mousedown=e},t.mouseup=function(e){var n=i._getRelativeMousePosition(e,t.element,t.pixelRatio);e.changedTouches&&e.preventDefault(),t.button=-1,t.absolute.x=n.x,t.absolute.y=n.y,t.position.x=t.absolute.x*t.scale.x+t.offset.x,t.position.y=t.absolute.y*t.scale.y+t.offset.y,t.mouseupPosition.x=t.position.x,t.mouseupPosition.y=t.position.y,t.sourceEvents.mouseup=e},t.mousewheel=function(e){t.wheelDelta=Math.max(-1,Math.min(1,e.wheelDelta||-e.detail)),e.preventDefault()},i.setElement(t,t.element),t},i.setElement=function(e,t){e.element=t,t.addEventListener("mousemove",e.mousemove),t.addEventListener("mousedown",e.mousedown),t.addEventListener("mouseup",e.mouseup),t.addEventListener("mousewheel",e.mousewheel),t.addEventListener("DOMMouseScroll",e.mousewheel),t.addEventListener("touchmove",e.mousemove),t.addEventListener("touchstart",e.mousedown),t.addEventListener("touchend",e.mouseup)},i.clearSourceEvents=function(e){e.sourceEvents.mousemove=null,e.sourceEvents.mousedown=null,e.sourceEvents.mouseup=null,e.sourceEvents.mousewheel=null,e.wheelDelta=0},i.setOffset=function(e,t){e.offset.x=t.x,e.offset.y=t.y,e.position.x=e.absolute.x*e.scale.x+e.offset.x,e.position.y=e.absolute.y*e.scale.y+e.offset.y},i.setScale=function(e,t){e.scale.x=t.x,e.scale.y=t.y,e.position.x=e.absolute.x*e.scale.x+e.offset.x,e.position.y=e.absolute.y*e.scale.y+e.offset.y},i._getRelativeMousePosition=function(e,t,n){var i,o,r=t.getBoundingClientRect(),a=document.documentElement||document.body.parentNode||document.body,s=void 0!==window.pageXOffset?window.pageXOffset:a.scrollLeft,l=void 0!==window.pageYOffset?window.pageYOffset:a.scrollTop,c=e.changedTouches;return c?(i=c[0].pageX-r.left-s,o=c[0].pageY-r.top-l):(i=e.pageX-r.left-s,o=e.pageY-r.top-l),{x:i/(t.clientWidth/(t.width||t.clientWidth)*n),y:o/(t.clientHeight/(t.height||t.clientHeight)*n)}}},function(e,t,n){var i={};e.exports=i;var o=n(0);i._registry={},i.register=function(e){if(i.isPlugin(e)||o.warn("Plugin.register:",i.toString(e),"does not implement all required fields."),e.name in i._registry){var t=i._registry[e.name],n=i.versionParse(e.version).number,r=i.versionParse(t.version).number;n>r?(o.warn("Plugin.register:",i.toString(t),"was upgraded to",i.toString(e)),i._registry[e.name]=e):n<r?o.warn("Plugin.register:",i.toString(t),"can not be downgraded to",i.toString(e)):e!==t&&o.warn("Plugin.register:",i.toString(e),"is already registered to different plugin object")}else i._registry[e.name]=e;return e},i.resolve=function(e){return i._registry[i.dependencyParse(e).name]},i.toString=function(e){return"string"==typeof e?e:(e.name||"anonymous")+"@"+(e.version||e.range||"0.0.0")},i.isPlugin=function(e){return e&&e.name&&e.version&&e.install},i.isUsed=function(e,t){return e.used.indexOf(t)>-1},i.isFor=function(e,t){var n=e.for&&i.dependencyParse(e.for);return!e.for||t.name===n.name&&i.versionSatisfies(t.version,n.range)},i.use=function(e,t){if(e.uses=(e.uses||[]).concat(t||[]),0!==e.uses.length){for(var n=i.dependencies(e),r=o.topologicalSort(n),a=[],s=0;s<r.length;s+=1)if(r[s]!==e.name){var l=i.resolve(r[s]);l?i.isUsed(e,l.name)||(i.isFor(l,e)||(o.warn("Plugin.use:",i.toString(l),"is for",l.for,"but installed on",i.toString(e)+"."),l._warned=!0),l.install?l.install(e):(o.warn("Plugin.use:",i.toString(l),"does not specify an install function."),l._warned=!0),l._warned?(a.push("🔶 "+i.toString(l)),delete l._warned):a.push("✅ "+i.toString(l)),e.used.push(l.name)):a.push("❌ "+r[s])}a.length>0&&o.info(a.join("  "))}else o.warn("Plugin.use:",i.toString(e),"does not specify any dependencies to install.")},i.dependencies=function(e,t){var n=i.dependencyParse(e),r=n.name;if(!(r in(t=t||{}))){e=i.resolve(e)||e,t[r]=o.map(e.uses||[],(function(t){i.isPlugin(t)&&i.register(t);var r=i.dependencyParse(t),a=i.resolve(t);return a&&!i.versionSatisfies(a.version,r.range)?(o.warn("Plugin.dependencies:",i.toString(a),"does not satisfy",i.toString(r),"used by",i.toString(n)+"."),a._warned=!0,e._warned=!0):a||(o.warn("Plugin.dependencies:",i.toString(t),"used by",i.toString(n),"could not be resolved."),e._warned=!0),r.name}));for(var a=0;a<t[r].length;a+=1)i.dependencies(t[r][a],t);return t}},i.dependencyParse=function(e){return o.isString(e)?(/^[\w-]+(@(\*|[\^~]?\d+\.\d+\.\d+(-[0-9A-Za-z-+]+)?))?$/.test(e)||o.warn("Plugin.dependencyParse:",e,"is not a valid dependency string."),{name:e.split("@")[0],range:e.split("@")[1]||"*"}):{name:e.name,range:e.range||e.version}},i.versionParse=function(e){var t=/^(\*)|(\^|~|>=|>)?\s*((\d+)\.(\d+)\.(\d+))(-[0-9A-Za-z-+]+)?$/;t.test(e)||o.warn("Plugin.versionParse:",e,"is not a valid version or range.");var n=t.exec(e),i=Number(n[4]),r=Number(n[5]),a=Number(n[6]);return{isRange:Boolean(n[1]||n[2]),version:n[3],range:e,operator:n[1]||n[2]||"",major:i,minor:r,patch:a,parts:[i,r,a],prerelease:n[7],number:1e8*i+1e4*r+a}},i.versionSatisfies=function(e,t){t=t||"*";var n=i.versionParse(t),o=i.versionParse(e);if(n.isRange){if("*"===n.operator||"*"===e)return!0;if(">"===n.operator)return o.number>n.number;if(">="===n.operator)return o.number>=n.number;if("~"===n.operator)return o.major===n.major&&o.minor===n.minor&&o.patch>=n.patch;if("^"===n.operator)return n.major>0?o.major===n.major&&o.number>=n.number:n.minor>0?o.minor===n.minor&&o.patch>=n.patch:o.patch===n.patch}return e===t||"*"===e}},function(e,t){var n={};e.exports=n,n.create=function(e){return{vertex:e,normalImpulse:0,tangentImpulse:0}}},function(e,t,n){var i={};e.exports=i;var o=n(7),r=n(18),a=n(13),s=n(19),l=n(5),c=n(6),u=n(10),d=n(0),p=n(4);i.create=function(e){e=e||{};var t=d.extend({positionIterations:6,velocityIterations:4,constraintIterations:2,enableSleeping:!1,events:[],plugin:{},gravity:{x:0,y:1,scale:.001},timing:{timestamp:0,timeScale:1,lastDelta:0,lastElapsed:0}},e);return t.world=e.world||c.create({label:"World"}),t.pairs=e.pairs||s.create(),t.detector=e.detector||a.create(),t.grid={buckets:[]},t.world.gravity=t.gravity,t.broadphase=t.grid,t.metrics={},t},i.update=function(e,t){var n,p=d.now(),f=e.world,v=e.detector,y=e.pairs,m=e.timing,g=m.timestamp;t=void 0!==t?t:d._baseDelta,t*=m.timeScale,m.timestamp+=t,m.lastDelta=t;var x={timestamp:m.timestamp,delta:t};l.trigger(e,"beforeUpdate",x);var h=c.allBodies(f),b=c.allConstraints(f);for(f.isModified&&(a.setBodies(v,h),c.setModified(f,!1,!1,!0)),e.enableSleeping&&o.update(h,t),i._bodiesApplyGravity(h,e.gravity),t>0&&i._bodiesUpdate(h,t),u.preSolveAll(h),n=0;n<e.constraintIterations;n++)u.solveAll(b,t);u.postSolveAll(h),v.pairs=e.pairs;var S=a.collisions(v);s.update(y,S,g),e.enableSleeping&&o.afterCollisions(y.list),y.collisionStart.length>0&&l.trigger(e,"collisionStart",{pairs:y.collisionStart});var w=d.clamp(20/e.positionIterations,0,1);for(r.preSolvePosition(y.list),n=0;n<e.positionIterations;n++)r.solvePosition(y.list,t,w);for(r.postSolvePosition(h),u.preSolveAll(h),n=0;n<e.constraintIterations;n++)u.solveAll(b,t);for(u.postSolveAll(h),r.preSolveVelocity(y.list),n=0;n<e.velocityIterations;n++)r.solveVelocity(y.list,t);return i._bodiesUpdateVelocities(h),y.collisionActive.length>0&&l.trigger(e,"collisionActive",{pairs:y.collisionActive}),y.collisionEnd.length>0&&l.trigger(e,"collisionEnd",{pairs:y.collisionEnd}),i._bodiesClearForces(h),l.trigger(e,"afterUpdate",x),e.timing.lastElapsed=d.now()-p,e},i.merge=function(e,t){if(d.extend(e,t),t.world){e.world=t.world,i.clear(e);for(var n=c.allBodies(e.world),r=0;r<n.length;r++){var a=n[r];o.set(a,!1),a.id=d.nextId()}}},i.clear=function(e){s.clear(e.pairs),a.clear(e.detector)},i._bodiesClearForces=function(e){for(var t=e.length,n=0;n<t;n++){var i=e[n];i.force.x=0,i.force.y=0,i.torque=0}},i._bodiesApplyGravity=function(e,t){var n=void 0!==t.scale?t.scale:.001,i=e.length;if((0!==t.x||0!==t.y)&&0!==n)for(var o=0;o<i;o++){var r=e[o];r.isStatic||r.isSleeping||(r.force.y+=r.mass*t.y*n,r.force.x+=r.mass*t.x*n)}},i._bodiesUpdate=function(e,t){for(var n=e.length,i=0;i<n;i++){var o=e[i];o.isStatic||o.isSleeping||p.update(o,t)}},i._bodiesUpdateVelocities=function(e){for(var t=e.length,n=0;n<t;n++)p.updateVelocities(e[n])}},function(e,t,n){var i={};e.exports=i;var o=n(3),r=n(0),a=n(1);i._restingThresh=2,i._restingThreshTangent=Math.sqrt(6),i._positionDampen=.9,i._positionWarming=.8,i._frictionNormalMultiplier=5,i._frictionMaxStatic=Number.MAX_VALUE,i.preSolvePosition=function(e){var t,n,i,o=e.length;for(t=0;t<o;t++)(n=e[t]).isActive&&(i=n.activeContacts.length,n.collision.parentA.totalContacts+=i,n.collision.parentB.totalContacts+=i)},i.solvePosition=function(e,t,n){var o,a,s,l,c,u,d,p,f=i._positionDampen*(n||1),v=r.clamp(t/r._baseDelta,0,1),y=e.length;for(o=0;o<y;o++)(a=e[o]).isActive&&!a.isSensor&&(l=(s=a.collision).parentA,c=s.parentB,u=s.normal,a.separation=u.x*(c.positionImpulse.x+s.penetration.x-l.positionImpulse.x)+u.y*(c.positionImpulse.y+s.penetration.y-l.positionImpulse.y));for(o=0;o<y;o++)(a=e[o]).isActive&&!a.isSensor&&(l=(s=a.collision).parentA,c=s.parentB,u=s.normal,p=a.separation-a.slop*v,(l.isStatic||c.isStatic)&&(p*=2),l.isStatic||l.isSleeping||(d=f/l.totalContacts,l.positionImpulse.x+=u.x*p*d,l.positionImpulse.y+=u.y*p*d),c.isStatic||c.isSleeping||(d=f/c.totalContacts,c.positionImpulse.x-=u.x*p*d,c.positionImpulse.y-=u.y*p*d))},i.postSolvePosition=function(e){for(var t=i._positionWarming,n=e.length,r=o.translate,s=a.update,l=0;l<n;l++){var c=e[l],u=c.positionImpulse,d=u.x,p=u.y,f=c.velocity;if(c.totalContacts=0,0!==d||0!==p){for(var v=0;v<c.parts.length;v++){var y=c.parts[v];r(y.vertices,u),s(y.bounds,y.vertices,f),y.position.x+=d,y.position.y+=p}c.positionPrev.x+=d,c.positionPrev.y+=p,d*f.x+p*f.y<0?(u.x=0,u.y=0):(u.x*=t,u.y*=t)}}},i.preSolveVelocity=function(e){var t,n,i=e.length;for(t=0;t<i;t++){var o=e[t];if(o.isActive&&!o.isSensor){var r=o.activeContacts,a=r.length,s=o.collision,l=s.parentA,c=s.parentB,u=s.normal,d=s.tangent;for(n=0;n<a;n++){var p=r[n],f=p.vertex,v=p.normalImpulse,y=p.tangentImpulse;if(0!==v||0!==y){var m=u.x*v+d.x*y,g=u.y*v+d.y*y;l.isStatic||l.isSleeping||(l.positionPrev.x+=m*l.inverseMass,l.positionPrev.y+=g*l.inverseMass,l.anglePrev+=l.inverseInertia*((f.x-l.position.x)*g-(f.y-l.position.y)*m)),c.isStatic||c.isSleeping||(c.positionPrev.x-=m*c.inverseMass,c.positionPrev.y-=g*c.inverseMass,c.anglePrev-=c.inverseInertia*((f.x-c.position.x)*g-(f.y-c.position.y)*m))}}}}},i.solveVelocity=function(e,t){var n,o,a,s,l=t/r._baseDelta,c=l*l*l,u=-i._restingThresh*l,d=i._restingThreshTangent,p=i._frictionNormalMultiplier*l,f=i._frictionMaxStatic,v=e.length;for(a=0;a<v;a++){var y=e[a];if(y.isActive&&!y.isSensor){var m=y.collision,g=m.parentA,x=m.parentB,h=g.velocity,b=x.velocity,S=m.normal.x,w=m.normal.y,A=m.tangent.x,P=m.tangent.y,C=y.activeContacts,M=C.length,B=1/M,_=g.inverseMass+x.inverseMass,k=y.friction*y.frictionStatic*p;for(h.x=g.position.x-g.positionPrev.x,h.y=g.position.y-g.positionPrev.y,b.x=x.position.x-x.positionPrev.x,b.y=x.position.y-x.positionPrev.y,g.angularVelocity=g.angle-g.anglePrev,x.angularVelocity=x.angle-x.anglePrev,s=0;s<M;s++){var I=C[s],T=I.vertex,R=T.x-g.position.x,V=T.y-g.position.y,E=T.x-x.position.x,L=T.y-x.position.y,D=h.x-V*g.angularVelocity,O=h.y+R*g.angularVelocity,F=D-(b.x-L*x.angularVelocity),H=O-(b.y+E*x.angularVelocity),j=S*F+w*H,q=A*F+P*H,W=y.separation+j,G=Math.min(W,1),U=(G=W<0?0:G)*k;q<-U||q>U?(o=q>0?q:-q,(n=y.friction*(q>0?1:-1)*c)<-o?n=-o:n>o&&(n=o)):(n=q,o=f);var N=R*w-V*S,z=E*w-L*S,X=B/(_+g.inverseInertia*N*N+x.inverseInertia*z*z),Q=(1+y.restitution)*j*X;if(n*=X,j<u)I.normalImpulse=0;else{var Y=I.normalImpulse;I.normalImpulse+=Q,I.normalImpulse>0&&(I.normalImpulse=0),Q=I.normalImpulse-Y}if(q<-d||q>d)I.tangentImpulse=0;else{var Z=I.tangentImpulse;I.tangentImpulse+=n,I.tangentImpulse<-o&&(I.tangentImpulse=-o),I.tangentImpulse>o&&(I.tangentImpulse=o),n=I.tangentImpulse-Z}var $=S*Q+A*n,J=w*Q+P*n;g.isStatic||g.isSleeping||(g.positionPrev.x+=$*g.inverseMass,g.positionPrev.y+=J*g.inverseMass,g.anglePrev+=(R*J-V*$)*g.inverseInertia),x.isStatic||x.isSleeping||(x.positionPrev.x-=$*x.inverseMass,x.positionPrev.y-=J*x.inverseMass,x.anglePrev-=(E*J-L*$)*x.inverseInertia)}}}}},function(e,t,n){var i={};e.exports=i;var o=n(9),r=n(0);i.create=function(e){return r.extend({table:{},list:[],collisionStart:[],collisionActive:[],collisionEnd:[]},e)},i.update=function(e,t,n){var i,r,a,s,l=e.list,c=l.length,u=e.table,d=t.length,p=e.collisionStart,f=e.collisionEnd,v=e.collisionActive;for(p.length=0,f.length=0,v.length=0,s=0;s<c;s++)l[s].confirmedActive=!1;for(s=0;s<d;s++)(a=(i=t[s]).pair)?(a.isActive?v.push(a):p.push(a),o.update(a,i,n),a.confirmedActive=!0):(u[(a=o.create(i,n)).id]=a,p.push(a),l.push(a));var y=[];for(c=l.length,s=0;s<c;s++)(a=l[s]).confirmedActive||(o.setActive(a,!1,n),f.push(a),a.collision.bodyA.isSleeping||a.collision.bodyB.isSleeping||y.push(s));for(s=0;s<y.length;s++)a=l[r=y[s]-s],l.splice(r,1),delete u[a.id]},i.clear=function(e){return e.table={},e.list.length=0,e.collisionStart.length=0,e.collisionActive.length=0,e.collisionEnd.length=0,e}},function(e,t,n){var i=e.exports=n(21);i.Axes=n(11),i.Bodies=n(12),i.Body=n(4),i.Bounds=n(1),i.Collision=n(8),i.Common=n(0),i.Composite=n(6),i.Composites=n(22),i.Constraint=n(10),i.Contact=n(16),i.Detector=n(13),i.Engine=n(17),i.Events=n(5),i.Grid=n(23),i.Mouse=n(14),i.MouseConstraint=n(24),i.Pair=n(9),i.Pairs=n(19),i.Plugin=n(15),i.Query=n(25),i.Render=n(26),i.Resolver=n(18),i.Runner=n(27),i.SAT=n(28),i.Sleeping=n(7),i.Svg=n(29),i.Vector=n(2),i.Vertices=n(3),i.World=n(30),i.Engine.run=i.Runner.run,i.Common.deprecated(i.Engine,"run","Engine.run ➤ use Matter.Runner.run(engine) instead")},function(e,t,n){var i={};e.exports=i;var o=n(15),r=n(0);i.name="matter-js",i.version="0.19.0",i.uses=[],i.used=[],i.use=function(){o.use(i,Array.prototype.slice.call(arguments))},i.before=function(e,t){return e=e.replace(/^Matter./,""),r.chainPathBefore(i,e,t)},i.after=function(e,t){return e=e.replace(/^Matter./,""),r.chainPathAfter(i,e,t)}},function(e,t,n){var i={};e.exports=i;var o=n(6),r=n(10),a=n(0),s=n(4),l=n(12),c=a.deprecated;i.stack=function(e,t,n,i,r,a,l){for(var c,u=o.create({label:"Stack"}),d=e,p=t,f=0,v=0;v<i;v++){for(var y=0,m=0;m<n;m++){var g=l(d,p,m,v,c,f);if(g){var x=g.bounds.max.y-g.bounds.min.y,h=g.bounds.max.x-g.bounds.min.x;x>y&&(y=x),s.translate(g,{x:.5*h,y:.5*x}),d=g.bounds.max.x+r,o.addBody(u,g),c=g,f+=1}else d+=r}p+=y+a,d=e}return u},i.chain=function(e,t,n,i,s,l){for(var c=e.bodies,u=1;u<c.length;u++){var d=c[u-1],p=c[u],f=d.bounds.max.y-d.bounds.min.y,v=d.bounds.max.x-d.bounds.min.x,y=p.bounds.max.y-p.bounds.min.y,m={bodyA:d,pointA:{x:v*t,y:f*n},bodyB:p,pointB:{x:(p.bounds.max.x-p.bounds.min.x)*i,y:y*s}},g=a.extend(m,l);o.addConstraint(e,r.create(g))}return e.label+=" Chain",e},i.mesh=function(e,t,n,i,s){var l,c,u,d,p,f=e.bodies;for(l=0;l<n;l++){for(c=1;c<t;c++)u=f[c-1+l*t],d=f[c+l*t],o.addConstraint(e,r.create(a.extend({bodyA:u,bodyB:d},s)));if(l>0)for(c=0;c<t;c++)u=f[c+(l-1)*t],d=f[c+l*t],o.addConstraint(e,r.create(a.extend({bodyA:u,bodyB:d},s))),i&&c>0&&(p=f[c-1+(l-1)*t],o.addConstraint(e,r.create(a.extend({bodyA:p,bodyB:d},s)))),i&&c<t-1&&(p=f[c+1+(l-1)*t],o.addConstraint(e,r.create(a.extend({bodyA:p,bodyB:d},s))))}return e.label+=" Mesh",e},i.pyramid=function(e,t,n,o,r,a,l){return i.stack(e,t,n,o,r,a,(function(t,i,a,c,u,d){var p=Math.min(o,Math.ceil(n/2)),f=u?u.bounds.max.x-u.bounds.min.x:0;if(!(c>p||a<(c=p-c)||a>n-1-c))return 1===d&&s.translate(u,{x:(a+(n%2==1?1:-1))*f,y:0}),l(e+(u?a*f:0)+a*r,i,a,c,u,d)}))},i.newtonsCradle=function(e,t,n,i,a){for(var s=o.create({label:"Newtons Cradle"}),c=0;c<n;c++){var u=l.circle(e+c*(1.9*i),t+a,i,{inertia:1/0,restitution:1,friction:0,frictionAir:1e-4,slop:1}),d=r.create({pointA:{x:e+c*(1.9*i),y:t},bodyB:u});o.addBody(s,u),o.addConstraint(s,d)}return s},c(i,"newtonsCradle","Composites.newtonsCradle ➤ moved to newtonsCradle example"),i.car=function(e,t,n,i,a){var c=s.nextGroup(!0),u=.5*-n+20,d=.5*n-20,p=o.create({label:"Car"}),f=l.rectangle(e,t,n,i,{collisionFilter:{group:c},chamfer:{radius:.5*i},density:2e-4}),v=l.circle(e+u,t+0,a,{collisionFilter:{group:c},friction:.8}),y=l.circle(e+d,t+0,a,{collisionFilter:{group:c},friction:.8}),m=r.create({bodyB:f,pointB:{x:u,y:0},bodyA:v,stiffness:1,length:0}),g=r.create({bodyB:f,pointB:{x:d,y:0},bodyA:y,stiffness:1,length:0});return o.addBody(p,f),o.addBody(p,v),o.addBody(p,y),o.addConstraint(p,m),o.addConstraint(p,g),p},c(i,"car","Composites.car ➤ moved to car example"),i.softBody=function(e,t,n,o,r,s,c,u,d,p){d=a.extend({inertia:1/0},d),p=a.extend({stiffness:.2,render:{type:"line",anchors:!1}},p);var f=i.stack(e,t,n,o,r,s,(function(e,t){return l.circle(e,t,u,d)}));return i.mesh(f,n,o,c,p),f.label="Soft Body",f},c(i,"softBody","Composites.softBody ➤ moved to softBody and cloth examples")},function(e,t,n){var i={};e.exports=i;var o=n(9),r=n(0),a=r.deprecated;i.create=function(e){return r.extend({buckets:{},pairs:{},pairsList:[],bucketWidth:48,bucketHeight:48},e)},i.update=function(e,t,n,o){var r,a,s,l,c,u=n.world,d=e.buckets,p=!1;for(r=0;r<t.length;r++){var f=t[r];if((!f.isSleeping||o)&&(!u.bounds||!(f.bounds.max.x<u.bounds.min.x||f.bounds.min.x>u.bounds.max.x||f.bounds.max.y<u.bounds.min.y||f.bounds.min.y>u.bounds.max.y))){var v=i._getRegion(e,f);if(!f.region||v.id!==f.region.id||o){f.region&&!o||(f.region=v);var y=i._regionUnion(v,f.region);for(a=y.startCol;a<=y.endCol;a++)for(s=y.startRow;s<=y.endRow;s++){l=d[c=i._getBucketId(a,s)];var m=a>=v.startCol&&a<=v.endCol&&s>=v.startRow&&s<=v.endRow,g=a>=f.region.startCol&&a<=f.region.endCol&&s>=f.region.startRow&&s<=f.region.endRow;!m&&g&&g&&l&&i._bucketRemoveBody(e,l,f),(f.region===v||m&&!g||o)&&(l||(l=i._createBucket(d,c)),i._bucketAddBody(e,l,f))}f.region=v,p=!0}}}p&&(e.pairsList=i._createActivePairsList(e))},a(i,"update","Grid.update ➤ replaced by Matter.Detector"),i.clear=function(e){e.buckets={},e.pairs={},e.pairsList=[]},a(i,"clear","Grid.clear ➤ replaced by Matter.Detector"),i._regionUnion=function(e,t){var n=Math.min(e.startCol,t.startCol),o=Math.max(e.endCol,t.endCol),r=Math.min(e.startRow,t.startRow),a=Math.max(e.endRow,t.endRow);return i._createRegion(n,o,r,a)},i._getRegion=function(e,t){var n=t.bounds,o=Math.floor(n.min.x/e.bucketWidth),r=Math.floor(n.max.x/e.bucketWidth),a=Math.floor(n.min.y/e.bucketHeight),s=Math.floor(n.max.y/e.bucketHeight);return i._createRegion(o,r,a,s)},i._createRegion=function(e,t,n,i){return{id:e+","+t+","+n+","+i,startCol:e,endCol:t,startRow:n,endRow:i}},i._getBucketId=function(e,t){return"C"+e+"R"+t},i._createBucket=function(e,t){return e[t]=[]},i._bucketAddBody=function(e,t,n){var i,r=e.pairs,a=o.id,s=t.length;for(i=0;i<s;i++){var l=t[i];if(!(n.id===l.id||n.isStatic&&l.isStatic)){var c=a(n,l),u=r[c];u?u[2]+=1:r[c]=[n,l,1]}}t.push(n)},i._bucketRemoveBody=function(e,t,n){var i,a=e.pairs,s=o.id;t.splice(r.indexOf(t,n),1);var l=t.length;for(i=0;i<l;i++){var c=a[s(n,t[i])];c&&(c[2]-=1)}},i._createActivePairsList=function(e){var t,n,i=e.pairs,o=r.keys(i),a=o.length,s=[];for(n=0;n<a;n++)(t=i[o[n]])[2]>0?s.push(t):delete i[o[n]];return s}},function(e,t,n){var i={};e.exports=i;var o=n(3),r=n(7),a=n(14),s=n(5),l=n(13),c=n(10),u=n(6),d=n(0),p=n(1);i.create=function(e,t){var n=(e?e.mouse:null)||(t?t.mouse:null);n||(e&&e.render&&e.render.canvas?n=a.create(e.render.canvas):t&&t.element?n=a.create(t.element):(n=a.create(),d.warn("MouseConstraint.create: options.mouse was undefined, options.element was undefined, may not function as expected")));var o={type:"mouseConstraint",mouse:n,element:null,body:null,constraint:c.create({label:"Mouse Constraint",pointA:n.position,pointB:{x:0,y:0},length:.01,stiffness:.1,angularStiffness:1,render:{strokeStyle:"#90EE90",lineWidth:3}}),collisionFilter:{category:1,mask:4294967295,group:0}},r=d.extend(o,t);return s.on(e,"beforeUpdate",(function(){var t=u.allBodies(e.world);i.update(r,t),i._triggerEvents(r)})),r},i.update=function(e,t){var n=e.mouse,i=e.constraint,a=e.body;if(0===n.button){if(i.bodyB)r.set(i.bodyB,!1),i.pointA=n.position;else for(var c=0;c<t.length;c++)if(a=t[c],p.contains(a.bounds,n.position)&&l.canCollide(a.collisionFilter,e.collisionFilter))for(var u=a.parts.length>1?1:0;u<a.parts.length;u++){var d=a.parts[u];if(o.contains(d.vertices,n.position)){i.pointA=n.position,i.bodyB=e.body=a,i.pointB={x:n.position.x-a.position.x,y:n.position.y-a.position.y},i.angleB=a.angle,r.set(a,!1),s.trigger(e,"startdrag",{mouse:n,body:a});break}}}else i.bodyB=e.body=null,i.pointB=null,a&&s.trigger(e,"enddrag",{mouse:n,body:a})},i._triggerEvents=function(e){var t=e.mouse,n=t.sourceEvents;n.mousemove&&s.trigger(e,"mousemove",{mouse:t}),n.mousedown&&s.trigger(e,"mousedown",{mouse:t}),n.mouseup&&s.trigger(e,"mouseup",{mouse:t}),a.clearSourceEvents(t)}},function(e,t,n){var i={};e.exports=i;var o=n(2),r=n(8),a=n(1),s=n(12),l=n(3);i.collides=function(e,t){for(var n=[],i=t.length,o=e.bounds,s=r.collides,l=a.overlaps,c=0;c<i;c++){var u=t[c],d=u.parts.length,p=1===d?0:1;if(l(u.bounds,o))for(var f=p;f<d;f++){var v=u.parts[f];if(l(v.bounds,o)){var y=s(v,e);if(y){n.push(y);break}}}}return n},i.ray=function(e,t,n,r){r=r||1e-100;for(var a=o.angle(t,n),l=o.magnitude(o.sub(t,n)),c=.5*(n.x+t.x),u=.5*(n.y+t.y),d=s.rectangle(c,u,l,r,{angle:a}),p=i.collides(d,e),f=0;f<p.length;f+=1){var v=p[f];v.body=v.bodyB=v.bodyA}return p},i.region=function(e,t,n){for(var i=[],o=0;o<e.length;o++){var r=e[o],s=a.overlaps(r.bounds,t);(s&&!n||!s&&n)&&i.push(r)}return i},i.point=function(e,t){for(var n=[],i=0;i<e.length;i++){var o=e[i];if(a.contains(o.bounds,t))for(var r=1===o.parts.length?0:1;r<o.parts.length;r++){var s=o.parts[r];if(a.contains(s.bounds,t)&&l.contains(s.vertices,t)){n.push(o);break}}}return n}},function(e,t,n){var i={};e.exports=i;var o=n(4),r=n(0),a=n(6),s=n(1),l=n(5),c=n(2),u=n(14);!function(){var e,t;"undefined"!=typeof window&&(e=window.requestAnimationFrame||window.webkitRequestAnimationFrame||window.mozRequestAnimationFrame||window.msRequestAnimationFrame||function(e){window.setTimeout((function(){e(r.now())}),1e3/60)},t=window.cancelAnimationFrame||window.mozCancelAnimationFrame||window.webkitCancelAnimationFrame||window.msCancelAnimationFrame),i._goodFps=30,i._goodDelta=1e3/60,i.create=function(e){var t={engine:null,element:null,canvas:null,mouse:null,frameRequestId:null,timing:{historySize:60,delta:0,deltaHistory:[],lastTime:0,lastTimestamp:0,lastElapsed:0,timestampElapsed:0,timestampElapsedHistory:[],engineDeltaHistory:[],engineElapsedHistory:[],elapsedHistory:[]},options:{width:800,height:600,pixelRatio:1,background:"#14151f",wireframeBackground:"#14151f",hasBounds:!!e.bounds,enabled:!0,wireframes:!0,showSleeping:!0,showDebug:!1,showStats:!1,showPerformance:!1,showBounds:!1,showVelocity:!1,showCollisions:!1,showSeparations:!1,showAxes:!1,showPositions:!1,showAngleIndicator:!1,showIds:!1,showVertexNumbers:!1,showConvexHulls:!1,showInternalEdges:!1,showMousePosition:!1}},n=r.extend(t,e);return n.canvas&&(n.canvas.width=n.options.width||n.canvas.width,n.canvas.height=n.options.height||n.canvas.height),n.mouse=e.mouse,n.engine=e.engine,n.canvas=n.canvas||p(n.options.width,n.options.height),n.context=n.canvas.getContext("2d"),n.textures={},n.bounds=n.bounds||{min:{x:0,y:0},max:{x:n.canvas.width,y:n.canvas.height}},n.controller=i,n.options.showBroadphase=!1,1!==n.options.pixelRatio&&i.setPixelRatio(n,n.options.pixelRatio),r.isElement(n.element)&&n.element.appendChild(n.canvas),n},i.run=function(t){!function o(r){t.frameRequestId=e(o),n(t,r),i.world(t,r),(t.options.showStats||t.options.showDebug)&&i.stats(t,t.context,r),(t.options.showPerformance||t.options.showDebug)&&i.performance(t,t.context,r)}()},i.stop=function(e){t(e.frameRequestId)},i.setPixelRatio=function(e,t){var n=e.options,i=e.canvas;"auto"===t&&(t=f(i)),n.pixelRatio=t,i.setAttribute("data-pixel-ratio",t),i.width=n.width*t,i.height=n.height*t,i.style.width=n.width+"px",i.style.height=n.height+"px"},i.lookAt=function(e,t,n,i){i=void 0===i||i,t=r.isArray(t)?t:[t],n=n||{x:0,y:0};for(var o={min:{x:1/0,y:1/0},max:{x:-1/0,y:-1/0}},a=0;a<t.length;a+=1){var s=t[a],l=s.bounds?s.bounds.min:s.min||s.position||s,c=s.bounds?s.bounds.max:s.max||s.position||s;l&&c&&(l.x<o.min.x&&(o.min.x=l.x),c.x>o.max.x&&(o.max.x=c.x),l.y<o.min.y&&(o.min.y=l.y),c.y>o.max.y&&(o.max.y=c.y))}var d=o.max.x-o.min.x+2*n.x,p=o.max.y-o.min.y+2*n.y,f=e.canvas.height,v=e.canvas.width/f,y=d/p,m=1,g=1;y>v?g=y/v:m=v/y,e.options.hasBounds=!0,e.bounds.min.x=o.min.x,e.bounds.max.x=o.min.x+d*m,e.bounds.min.y=o.min.y,e.bounds.max.y=o.min.y+p*g,i&&(e.bounds.min.x+=.5*d-d*m*.5,e.bounds.max.x+=.5*d-d*m*.5,e.bounds.min.y+=.5*p-p*g*.5,e.bounds.max.y+=.5*p-p*g*.5),e.bounds.min.x-=n.x,e.bounds.max.x-=n.x,e.bounds.min.y-=n.y,e.bounds.max.y-=n.y,e.mouse&&(u.setScale(e.mouse,{x:(e.bounds.max.x-e.bounds.min.x)/e.canvas.width,y:(e.bounds.max.y-e.bounds.min.y)/e.canvas.height}),u.setOffset(e.mouse,e.bounds.min))},i.startViewTransform=function(e){var t=e.bounds.max.x-e.bounds.min.x,n=e.bounds.max.y-e.bounds.min.y,i=t/e.options.width,o=n/e.options.height;e.context.setTransform(e.options.pixelRatio/i,0,0,e.options.pixelRatio/o,0,0),e.context.translate(-e.bounds.min.x,-e.bounds.min.y)},i.endViewTransform=function(e){e.context.setTransform(e.options.pixelRatio,0,0,e.options.pixelRatio,0,0)},i.world=function(e,t){var n,o=r.now(),d=e.engine,p=d.world,f=e.canvas,v=e.context,m=e.options,g=e.timing,x=a.allBodies(p),h=a.allConstraints(p),b=m.wireframes?m.wireframeBackground:m.background,S=[],w=[],A={timestamp:d.timing.timestamp};if(l.trigger(e,"beforeRender",A),e.currentBackground!==b&&y(e,b),v.globalCompositeOperation="source-in",v.fillStyle="transparent",v.fillRect(0,0,f.width,f.height),v.globalCompositeOperation="source-over",m.hasBounds){for(n=0;n<x.length;n++){var P=x[n];s.overlaps(P.bounds,e.bounds)&&S.push(P)}for(n=0;n<h.length;n++){var C=h[n],M=C.bodyA,B=C.bodyB,_=C.pointA,k=C.pointB;M&&(_=c.add(M.position,C.pointA)),B&&(k=c.add(B.position,C.pointB)),_&&k&&((s.contains(e.bounds,_)||s.contains(e.bounds,k))&&w.push(C))}i.startViewTransform(e),e.mouse&&(u.setScale(e.mouse,{x:(e.bounds.max.x-e.bounds.min.x)/e.options.width,y:(e.bounds.max.y-e.bounds.min.y)/e.options.height}),u.setOffset(e.mouse,e.bounds.min))}else w=h,S=x,1!==e.options.pixelRatio&&e.context.setTransform(e.options.pixelRatio,0,0,e.options.pixelRatio,0,0);!m.wireframes||d.enableSleeping&&m.showSleeping?i.bodies(e,S,v):(m.showConvexHulls&&i.bodyConvexHulls(e,S,v),i.bodyWireframes(e,S,v)),m.showBounds&&i.bodyBounds(e,S,v),(m.showAxes||m.showAngleIndicator)&&i.bodyAxes(e,S,v),m.showPositions&&i.bodyPositions(e,S,v),m.showVelocity&&i.bodyVelocity(e,S,v),m.showIds&&i.bodyIds(e,S,v),m.showSeparations&&i.separations(e,d.pairs.list,v),m.showCollisions&&i.collisions(e,d.pairs.list,v),m.showVertexNumbers&&i.vertexNumbers(e,S,v),m.showMousePosition&&i.mousePosition(e,e.mouse,v),i.constraints(w,v),m.hasBounds&&i.endViewTransform(e),l.trigger(e,"afterRender",A),g.lastElapsed=r.now()-o},i.stats=function(e,t,n){for(var i=e.engine,o=i.world,r=a.allBodies(o),s=0,l=0,c=0;c<r.length;c+=1)s+=r[c].parts.length;var u={Part:s,Body:r.length,Cons:a.allConstraints(o).length,Comp:a.allComposites(o).length,Pair:i.pairs.list.length};for(var d in t.fillStyle="#0e0f19",t.fillRect(l,0,302.5,44),t.font="12px Arial",t.textBaseline="top",t.textAlign="right",u){var p=u[d];t.fillStyle="#aaa",t.fillText(d,l+55,8),t.fillStyle="#eee",t.fillText(p,l+55,26),l+=55}},i.performance=function(e,t){var n=e.engine,o=e.timing,r=o.deltaHistory,a=o.elapsedHistory,s=o.timestampElapsedHistory,l=o.engineDeltaHistory,c=o.engineElapsedHistory,u=n.timing.lastDelta,p=d(r),f=d(a),v=d(l),y=d(c),m=d(s)/p||0,g=1e3/p||0;t.fillStyle="#0e0f19",t.fillRect(0,50,370,34),i.status(t,10,69,60,4,r.length,Math.round(g)+" fps",g/i._goodFps,(function(e){return r[e]/p-1})),i.status(t,82,69,60,4,l.length,u.toFixed(2)+" dt",i._goodDelta/u,(function(e){return l[e]/v-1})),i.status(t,154,69,60,4,c.length,y.toFixed(2)+" ut",1-y/i._goodFps,(function(e){return c[e]/y-1})),i.status(t,226,69,60,4,a.length,f.toFixed(2)+" rt",1-f/i._goodFps,(function(e){return a[e]/f-1})),i.status(t,298,69,60,4,s.length,m.toFixed(2)+" x",m*m*m,(function(e){return(s[e]/r[e]/m||0)-1}))},i.status=function(e,t,n,i,o,a,s,l,c){e.strokeStyle="#888",e.fillStyle="#444",e.lineWidth=1,e.fillRect(t,n+7,i,1),e.beginPath(),e.moveTo(t,n+7-o*r.clamp(.4*c(0),-2,2));for(var u=0;u<i;u+=1)e.lineTo(t+u,n+7-(u<a?o*r.clamp(.4*c(u),-2,2):0));e.stroke(),e.fillStyle="hsl("+r.clamp(25+95*l,0,120)+",100%,60%)",e.fillRect(t,n-7,4,4),e.font="12px Arial",e.textBaseline="middle",e.textAlign="right",e.fillStyle="#eee",e.fillText(s,t+i,n-5)},i.constraints=function(e,t){for(var n=t,i=0;i<e.length;i++){var o=e[i];if(o.render.visible&&o.pointA&&o.pointB){var a,s,l=o.bodyA,u=o.bodyB;if(a=l?c.add(l.position,o.pointA):o.pointA,"pin"===o.render.type)n.beginPath(),n.arc(a.x,a.y,3,0,2*Math.PI),n.closePath();else{if(s=u?c.add(u.position,o.pointB):o.pointB,n.beginPath(),n.moveTo(a.x,a.y),"spring"===o.render.type)for(var d,p=c.sub(s,a),f=c.perp(c.normalise(p)),v=Math.ceil(r.clamp(o.length/5,12,20)),y=1;y<v;y+=1)d=y%2==0?1:-1,n.lineTo(a.x+p.x*(y/v)+f.x*d*4,a.y+p.y*(y/v)+f.y*d*4);n.lineTo(s.x,s.y)}o.render.lineWidth&&(n.lineWidth=o.render.lineWidth,n.strokeStyle=o.render.strokeStyle,n.stroke()),o.render.anchors&&(n.fillStyle=o.render.strokeStyle,n.beginPath(),n.arc(a.x,a.y,3,0,2*Math.PI),n.arc(s.x,s.y,3,0,2*Math.PI),n.closePath(),n.fill())}}},i.bodies=function(e,t,n){var i,o,r,a,s=n,l=(e.engine,e.options),c=l.showInternalEdges||!l.wireframes;for(r=0;r<t.length;r++)if((i=t[r]).render.visible)for(a=i.parts.length>1?1:0;a<i.parts.length;a++)if((o=i.parts[a]).render.visible){if(l.showSleeping&&i.isSleeping?s.globalAlpha=.5*o.render.opacity:1!==o.render.opacity&&(s.globalAlpha=o.render.opacity),o.render.sprite&&o.render.sprite.texture&&!l.wireframes){var u=o.render.sprite,d=v(e,u.texture);s.translate(o.position.x,o.position.y),s.rotate(o.angle),s.drawImage(d,d.width*-u.xOffset*u.xScale,d.height*-u.yOffset*u.yScale,d.width*u.xScale,d.height*u.yScale),s.rotate(-o.angle),s.translate(-o.position.x,-o.position.y)}else{if(o.circleRadius)s.beginPath(),s.arc(o.position.x,o.position.y,o.circleRadius,0,2*Math.PI);else{s.beginPath(),s.moveTo(o.vertices[0].x,o.vertices[0].y);for(var p=1;p<o.vertices.length;p++)!o.vertices[p-1].isInternal||c?s.lineTo(o.vertices[p].x,o.vertices[p].y):s.moveTo(o.vertices[p].x,o.vertices[p].y),o.vertices[p].isInternal&&!c&&s.moveTo(o.vertices[(p+1)%o.vertices.length].x,o.vertices[(p+1)%o.vertices.length].y);s.lineTo(o.vertices[0].x,o.vertices[0].y),s.closePath()}l.wireframes?(s.lineWidth=1,s.strokeStyle="#bbb",s.stroke()):(s.fillStyle=o.render.fillStyle,o.render.lineWidth&&(s.lineWidth=o.render.lineWidth,s.strokeStyle=o.render.strokeStyle,s.stroke()),s.fill())}s.globalAlpha=1}},i.bodyWireframes=function(e,t,n){var i,o,r,a,s,l=n,c=e.options.showInternalEdges;for(l.beginPath(),r=0;r<t.length;r++)if((i=t[r]).render.visible)for(s=i.parts.length>1?1:0;s<i.parts.length;s++){for(o=i.parts[s],l.moveTo(o.vertices[0].x,o.vertices[0].y),a=1;a<o.vertices.length;a++)!o.vertices[a-1].isInternal||c?l.lineTo(o.vertices[a].x,o.vertices[a].y):l.moveTo(o.vertices[a].x,o.vertices[a].y),o.vertices[a].isInternal&&!c&&l.moveTo(o.vertices[(a+1)%o.vertices.length].x,o.vertices[(a+1)%o.vertices.length].y);l.lineTo(o.vertices[0].x,o.vertices[0].y)}l.lineWidth=1,l.strokeStyle="#bbb",l.stroke()},i.bodyConvexHulls=function(e,t,n){var i,o,r,a=n;for(a.beginPath(),o=0;o<t.length;o++)if((i=t[o]).render.visible&&1!==i.parts.length){for(a.moveTo(i.vertices[0].x,i.vertices[0].y),r=1;r<i.vertices.length;r++)a.lineTo(i.vertices[r].x,i.vertices[r].y);a.lineTo(i.vertices[0].x,i.vertices[0].y)}a.lineWidth=1,a.strokeStyle="rgba(255,255,255,0.2)",a.stroke()},i.vertexNumbers=function(e,t,n){var i,o,r,a=n;for(i=0;i<t.length;i++){var s=t[i].parts;for(r=s.length>1?1:0;r<s.length;r++){var l=s[r];for(o=0;o<l.vertices.length;o++)a.fillStyle="rgba(255,255,255,0.2)",a.fillText(i+"_"+o,l.position.x+.8*(l.vertices[o].x-l.position.x),l.position.y+.8*(l.vertices[o].y-l.position.y))}}},i.mousePosition=function(e,t,n){var i=n;i.fillStyle="rgba(255,255,255,0.8)",i.fillText(t.position.x+"  "+t.position.y,t.position.x+5,t.position.y-5)},i.bodyBounds=function(e,t,n){var i=n,o=(e.engine,e.options);i.beginPath();for(var r=0;r<t.length;r++){if(t[r].render.visible)for(var a=t[r].parts,s=a.length>1?1:0;s<a.length;s++){var l=a[s];i.rect(l.bounds.min.x,l.bounds.min.y,l.bounds.max.x-l.bounds.min.x,l.bounds.max.y-l.bounds.min.y)}}o.wireframes?i.strokeStyle="rgba(255,255,255,0.08)":i.strokeStyle="rgba(0,0,0,0.1)",i.lineWidth=1,i.stroke()},i.bodyAxes=function(e,t,n){var i,o,r,a,s=n,l=(e.engine,e.options);for(s.beginPath(),o=0;o<t.length;o++){var c=t[o],u=c.parts;if(c.render.visible)if(l.showAxes)for(r=u.length>1?1:0;r<u.length;r++)for(i=u[r],a=0;a<i.axes.length;a++){var d=i.axes[a];s.moveTo(i.position.x,i.position.y),s.lineTo(i.position.x+20*d.x,i.position.y+20*d.y)}else for(r=u.length>1?1:0;r<u.length;r++)for(i=u[r],a=0;a<i.axes.length;a++)s.moveTo(i.position.x,i.position.y),s.lineTo((i.vertices[0].x+i.vertices[i.vertices.length-1].x)/2,(i.vertices[0].y+i.vertices[i.vertices.length-1].y)/2)}l.wireframes?(s.strokeStyle="indianred",s.lineWidth=1):(s.strokeStyle="rgba(255, 255, 255, 0.4)",s.globalCompositeOperation="overlay",s.lineWidth=2),s.stroke(),s.globalCompositeOperation="source-over"},i.bodyPositions=function(e,t,n){var i,o,r,a,s=n,l=(e.engine,e.options);for(s.beginPath(),r=0;r<t.length;r++)if((i=t[r]).render.visible)for(a=0;a<i.parts.length;a++)o=i.parts[a],s.arc(o.position.x,o.position.y,3,0,2*Math.PI,!1),s.closePath();for(l.wireframes?s.fillStyle="indianred":s.fillStyle="rgba(0,0,0,0.5)",s.fill(),s.beginPath(),r=0;r<t.length;r++)(i=t[r]).render.visible&&(s.arc(i.positionPrev.x,i.positionPrev.y,2,0,2*Math.PI,!1),s.closePath());s.fillStyle="rgba(255,165,0,0.8)",s.fill()},i.bodyVelocity=function(e,t,n){var i=n;i.beginPath();for(var r=0;r<t.length;r++){var a=t[r];if(a.render.visible){var s=o.getVelocity(a);i.moveTo(a.position.x,a.position.y),i.lineTo(a.position.x+s.x,a.position.y+s.y)}}i.lineWidth=3,i.strokeStyle="cornflowerblue",i.stroke()},i.bodyIds=function(e,t,n){var i,o,r=n;for(i=0;i<t.length;i++)if(t[i].render.visible){var a=t[i].parts;for(o=a.length>1?1:0;o<a.length;o++){var s=a[o];r.font="12px Arial",r.fillStyle="rgba(255,255,255,0.5)",r.fillText(s.id,s.position.x+10,s.position.y-10)}}},i.collisions=function(e,t,n){var i,o,r,a,s=n,l=e.options;for(s.beginPath(),r=0;r<t.length;r++)if((i=t[r]).isActive)for(o=i.collision,a=0;a<i.activeContacts.length;a++){var c=i.activeContacts[a].vertex;s.rect(c.x-1.5,c.y-1.5,3.5,3.5)}for(l.wireframes?s.fillStyle="rgba(255,255,255,0.7)":s.fillStyle="orange",s.fill(),s.beginPath(),r=0;r<t.length;r++)if((i=t[r]).isActive&&(o=i.collision,i.activeContacts.length>0)){var u=i.activeContacts[0].vertex.x,d=i.activeContacts[0].vertex.y;2===i.activeContacts.length&&(u=(i.activeContacts[0].vertex.x+i.activeContacts[1].vertex.x)/2,d=(i.activeContacts[0].vertex.y+i.activeContacts[1].vertex.y)/2),o.bodyB===o.supports[0].body||!0===o.bodyA.isStatic?s.moveTo(u-8*o.normal.x,d-8*o.normal.y):s.moveTo(u+8*o.normal.x,d+8*o.normal.y),s.lineTo(u,d)}l.wireframes?s.strokeStyle="rgba(255,165,0,0.7)":s.strokeStyle="orange",s.lineWidth=1,s.stroke()},i.separations=function(e,t,n){var i,o,r,a,s,l=n,c=e.options;for(l.beginPath(),s=0;s<t.length;s++)if((i=t[s]).isActive){r=(o=i.collision).bodyA;var u=1;(a=o.bodyB).isStatic||r.isStatic||(u=.5),a.isStatic&&(u=0),l.moveTo(a.position.x,a.position.y),l.lineTo(a.position.x-o.penetration.x*u,a.position.y-o.penetration.y*u),u=1,a.isStatic||r.isStatic||(u=.5),r.isStatic&&(u=0),l.moveTo(r.position.x,r.position.y),l.lineTo(r.position.x+o.penetration.x*u,r.position.y+o.penetration.y*u)}c.wireframes?l.strokeStyle="rgba(255,165,0,0.5)":l.strokeStyle="orange",l.stroke()},i.inspector=function(e,t){e.engine;var n,i=e.selected,o=e.render,r=o.options;if(r.hasBounds){var a=o.bounds.max.x-o.bounds.min.x,s=o.bounds.max.y-o.bounds.min.y,l=a/o.options.width,c=s/o.options.height;t.scale(1/l,1/c),t.translate(-o.bounds.min.x,-o.bounds.min.y)}for(var u=0;u<i.length;u++){var d=i[u].data;switch(t.translate(.5,.5),t.lineWidth=1,t.strokeStyle="rgba(255,165,0,0.9)",t.setLineDash([1,2]),d.type){case"body":n=d.bounds,t.beginPath(),t.rect(Math.floor(n.min.x-3),Math.floor(n.min.y-3),Math.floor(n.max.x-n.min.x+6),Math.floor(n.max.y-n.min.y+6)),t.closePath(),t.stroke();break;case"constraint":var p=d.pointA;d.bodyA&&(p=d.pointB),t.beginPath(),t.arc(p.x,p.y,10,0,2*Math.PI),t.closePath(),t.stroke()}t.setLineDash([]),t.translate(-.5,-.5)}null!==e.selectStart&&(t.translate(.5,.5),t.lineWidth=1,t.strokeStyle="rgba(255,165,0,0.6)",t.fillStyle="rgba(255,165,0,0.1)",n=e.selectBounds,t.beginPath(),t.rect(Math.floor(n.min.x),Math.floor(n.min.y),Math.floor(n.max.x-n.min.x),Math.floor(n.max.y-n.min.y)),t.closePath(),t.stroke(),t.fill(),t.translate(-.5,-.5)),r.hasBounds&&t.setTransform(1,0,0,1,0,0)};var n=function(e,t){var n=e.engine,o=e.timing,r=o.historySize,a=n.timing.timestamp;o.delta=t-o.lastTime||i._goodDelta,o.lastTime=t,o.timestampElapsed=a-o.lastTimestamp||0,o.lastTimestamp=a,o.deltaHistory.unshift(o.delta),o.deltaHistory.length=Math.min(o.deltaHistory.length,r),o.engineDeltaHistory.unshift(n.timing.lastDelta),o.engineDeltaHistory.length=Math.min(o.engineDeltaHistory.length,r),o.timestampElapsedHistory.unshift(o.timestampElapsed),o.timestampElapsedHistory.length=Math.min(o.timestampElapsedHistory.length,r),o.engineElapsedHistory.unshift(n.timing.lastElapsed),o.engineElapsedHistory.length=Math.min(o.engineElapsedHistory.length,r),o.elapsedHistory.unshift(o.lastElapsed),o.elapsedHistory.length=Math.min(o.elapsedHistory.length,r)},d=function(e){for(var t=0,n=0;n<e.length;n+=1)t+=e[n];return t/e.length||0},p=function(e,t){var n=document.createElement("canvas");return n.width=e,n.height=t,n.oncontextmenu=function(){return!1},n.onselectstart=function(){return!1},n},f=function(e){var t=e.getContext("2d");return(window.devicePixelRatio||1)/(t.webkitBackingStorePixelRatio||t.mozBackingStorePixelRatio||t.msBackingStorePixelRatio||t.oBackingStorePixelRatio||t.backingStorePixelRatio||1)},v=function(e,t){var n=e.textures[t];return n||((n=e.textures[t]=new Image).src=t,n)},y=function(e,t){var n=t;/(jpg|gif|png)$/.test(t)&&(n="url("+t+")"),e.canvas.style.background=n,e.canvas.style.backgroundSize="contain",e.currentBackground=t}}()},function(e,t,n){var i={};e.exports=i;var o=n(5),r=n(17),a=n(0);!function(){var e,t,n;("undefined"!=typeof window&&(e=window.requestAnimationFrame||window.webkitRequestAnimationFrame||window.mozRequestAnimationFrame||window.msRequestAnimationFrame,t=window.cancelAnimationFrame||window.mozCancelAnimationFrame||window.webkitCancelAnimationFrame||window.msCancelAnimationFrame),e)||(e=function(e){n=setTimeout((function(){e(a.now())}),1e3/60)},t=function(){clearTimeout(n)});i.create=function(e){var t=a.extend({fps:60,deltaSampleSize:60,counterTimestamp:0,frameCounter:0,deltaHistory:[],timePrev:null,frameRequestId:null,isFixed:!1,enabled:!0},e);return t.delta=t.delta||1e3/t.fps,t.deltaMin=t.deltaMin||1e3/t.fps,t.deltaMax=t.deltaMax||1e3/(.5*t.fps),t.fps=1e3/t.delta,t},i.run=function(t,n){return void 0!==t.positionIterations&&(n=t,t=i.create()),function o(r){t.frameRequestId=e(o),r&&t.enabled&&i.tick(t,n,r)}(),t},i.tick=function(e,t,n){var i,a=t.timing;e.isFixed?i=e.delta:(i=n-e.timePrev||e.delta,e.timePrev=n,e.deltaHistory.push(i),e.deltaHistory=e.deltaHistory.slice(-e.deltaSampleSize),i=(i=(i=Math.min.apply(null,e.deltaHistory))<e.deltaMin?e.deltaMin:i)>e.deltaMax?e.deltaMax:i,e.delta=i);var s={timestamp:a.timestamp};o.trigger(e,"beforeTick",s),e.frameCounter+=1,n-e.counterTimestamp>=1e3&&(e.fps=e.frameCounter*((n-e.counterTimestamp)/1e3),e.counterTimestamp=n,e.frameCounter=0),o.trigger(e,"tick",s),o.trigger(e,"beforeUpdate",s),r.update(t,i),o.trigger(e,"afterUpdate",s),o.trigger(e,"afterTick",s)},i.stop=function(e){t(e.frameRequestId)},i.start=function(e,t){i.run(e,t)}}()},function(e,t,n){var i={};e.exports=i;var o=n(8),r=n(0).deprecated;i.collides=function(e,t){return o.collides(e,t)},r(i,"collides","SAT.collides ➤ replaced by Collision.collides")},function(e,t,n){var i={};e.exports=i;n(1);var o=n(0);i.pathToVertices=function(e,t){"undefined"==typeof window||"SVGPathSeg"in window||o.warn("Svg.pathToVertices: SVGPathSeg not defined, a polyfill is required.");var n,r,a,s,l,c,u,d,p,f,v,y=[],m=0,g=0,x=0;t=t||15;var h=function(e,t,n){var i=n%2==1&&n>1;if(!p||e!=p.x||t!=p.y){p&&i?(f=p.x,v=p.y):(f=0,v=0);var o={x:f+e,y:v+t};!i&&p||(p=o),y.push(o),g=f+e,x=v+t}},b=function(e){var t=e.pathSegTypeAsLetter.toUpperCase();if("Z"!==t){switch(t){case"M":case"L":case"T":case"C":case"S":case"Q":g=e.x,x=e.y;break;case"H":g=e.x;break;case"V":x=e.y}h(g,x,e.pathSegType)}};for(i._svgPathToAbsolute(e),a=e.getTotalLength(),c=[],n=0;n<e.pathSegList.numberOfItems;n+=1)c.push(e.pathSegList.getItem(n));for(u=c.concat();m<a;){if((l=c[e.getPathSegAtLength(m)])!=d){for(;u.length&&u[0]!=l;)b(u.shift());d=l}switch(l.pathSegTypeAsLetter.toUpperCase()){case"C":case"T":case"S":case"Q":case"A":s=e.getPointAtLength(m),h(s.x,s.y,0)}m+=t}for(n=0,r=u.length;n<r;++n)b(u[n]);return y},i._svgPathToAbsolute=function(e){for(var t,n,i,o,r,a,s=e.pathSegList,l=0,c=0,u=s.numberOfItems,d=0;d<u;++d){var p=s.getItem(d),f=p.pathSegTypeAsLetter;if(/[MLHVCSQTA]/.test(f))"x"in p&&(l=p.x),"y"in p&&(c=p.y);else switch("x1"in p&&(i=l+p.x1),"x2"in p&&(r=l+p.x2),"y1"in p&&(o=c+p.y1),"y2"in p&&(a=c+p.y2),"x"in p&&(l+=p.x),"y"in p&&(c+=p.y),f){case"m":s.replaceItem(e.createSVGPathSegMovetoAbs(l,c),d);break;case"l":s.replaceItem(e.createSVGPathSegLinetoAbs(l,c),d);break;case"h":s.replaceItem(e.createSVGPathSegLinetoHorizontalAbs(l),d);break;case"v":s.replaceItem(e.createSVGPathSegLinetoVerticalAbs(c),d);break;case"c":s.replaceItem(e.createSVGPathSegCurvetoCubicAbs(l,c,i,o,r,a),d);break;case"s":s.replaceItem(e.createSVGPathSegCurvetoCubicSmoothAbs(l,c,r,a),d);break;case"q":s.replaceItem(e.createSVGPathSegCurvetoQuadraticAbs(l,c,i,o),d);break;case"t":s.replaceItem(e.createSVGPathSegCurvetoQuadraticSmoothAbs(l,c),d);break;case"a":s.replaceItem(e.createSVGPathSegArcAbs(l,c,p.r1,p.r2,p.angle,p.largeArcFlag,p.sweepFlag),d);break;case"z":case"Z":l=t,c=n}"M"!=f&&"m"!=f||(t=l,n=c)}}},function(e,t,n){var i={};e.exports=i;var o=n(6);n(0);i.create=o.create,i.add=o.add,i.remove=o.remove,i.clear=o.clear,i.addComposite=o.addComposite,i.addBody=o.addBody,i.addConstraint=o.addConstraint}])}));
+</script>
+<script>
+/* ============================================================================
+   engine.js  -  THE RULES OF GAME OF FRUEETS (no pictures, no sounds, no physics)
+   ============================================================================
+   WHY a separate file?
+   ANALOGY: think of a board game. The BOARD and PIECES (pegs, ball, cups, colours, sounds) are one thing.
+   The RULEBOOK (who pays what, who wins what, whose turn it is) is another. The rulebook is just words and
+   numbers: it doesn't care whether the pieces are shown on a phone, a laptop or a server far away.
+
+   Keeping the rulebook in its own file means:
+     * the page (browser) uses it to run a game on one device, exactly as before, and
+     * later the SERVER (Node) uses the very same file as the referee for friends playing from different countries.
+       One rulebook, two places: they can never disagree.
+
+   HOW IT WORKS
+   Everything about "where the game is up to" lives in one object, S (short for "session"):
+     S.state       "home" | "idle" | "playing" | "result" | "gameover" | "final"
+     S.table       { players: [...], current: index of whoever's turn it is, started: bool, kitty: dollars in the pool }
+     S.results     fruits the current game's balls landed in, e.g. ["Cherry", "Star"]
+     S.ballsLeft   balls not yet played in the current game
+     S.keepsTurn   true when the game just finished was a win, so the same player goes again
+     S.lastOutcome { label, payout, net, capped, wanted } for the game that just finished
+     S.outcomeKind "jackpot" | "big" | "small" | "none"  (which jingle to play)
+     S.endInfo     { title, line2, note } used when a player is out
+   Each function below takes S, changes it, and returns a small note about what happened.
+   Nothing here touches the screen, so it is easy to test with thousands of fake games.
+   ============================================================================ */
+(function (root, factory) {
+  // "UMD wrapper": lets this one file work both as a browser <script> (it makes a global called Rules)
+  // and as a Node module (require("./engine.js")). You can ignore this little shell.
+  if (typeof module === "object" && module.exports) { module.exports = factory(); }
+  else { root.Rules = factory(); }
+}(typeof self !== "undefined" ? self : this, function () {
+
+  // ------------------------------------------------------------------------
+  // SETTINGS (money and rules). These are the numbers you can change to experiment.
+  // ------------------------------------------------------------------------
+  const STARTING_BALANCE   = 10;   // dollars each new player starts with (their "stack")
+  const KITTY_START        = 50;   // dollars in the kitty when the table opens (the jackpot reserve)
+  const BET_MIN            = 1;    // smallest bet for one game
+  const BET_MAX            = 5;    // biggest bet for one game
+  const JACKPOT_MULTIPLIER = 50;   // three Stars pays this many times your bet, never more than the kitty holds
+  const TILT_EVERY_GAMES   = 3;    // a player may use Tilt once in this many of their own games
+  // CHANGED IN 14a: the tilt is about 3 times stronger (it was 1.6 and 3.6, which hardly moved the ball). Measured with the real physics:
+  // pressed after the last pegs a small tilt moves the landing spot about 2 cups sideways, a large one about 3 to 4 cups. Pressed early,
+  // among the pegs, the pegs scramble the ball again, so the result is unpredictable. (Speed added to the ball, in pixels per step.)
+  const TILT_SMALL         = 4.5;  // sideways nudge for a small tilt
+  const TILT_LARGE         = 9;    // sideways nudge for a large tilt
+  const BALLS_PER_GAME     = 3;    // balls in one game
+  const MAX_PLAYERS        = 5;    // most players at one table
+  const SOUND_BIG_WIN_AT   = 12;   // a prize of this many dollars or more counts as "big" (picks the jingle)
+  const KEEP_TURN_MIN_PAYOUT = 1;  // a game paying at least this many dollars keeps the turn. 9999 switches the rule off.
+
+  // Prizes for a $1 bet. The real prize is the number x your bet (a $3 bet pays 3x).
+  // CHANGED IN 14a: the Bell is back (it is the best fruit), and the prizes for combinations that use the wild Star are about
+  // half of what they were. WHY: with 13 cups, a player who aims at the Star hits it about 1 ball in 6, and the old wild prizes returned
+  // them $1.70 for every $1 bet, so the kitty would empty in no time. Now a player aiming at the Star gets back about $1.20 per $1
+  // (skill pays, a little), and one who pulls at random about $0.62. (The old numbers are in the comments in case you want them back.)
+  const PAYOUT_THREE     = { Cherry: 4, Peach: 6, Pineapple: 12, Lemon: 24, Bell: 36 };    // three of a kind
+  const PAYOUT_WITH_STAR = { Cherry: 2, Peach: 3, Pineapple: 5,  Lemon: 10, Bell: 15 };    // two of a kind + one Star   (was 3, 5, 9, 18)
+  const PAYOUT_TWO_STARS = { Cherry: 1, Peach: 2, Pineapple: 3,  Lemon: 6,  Bell: 9  };    // two Stars + one fruit     (was 2, 3, 6, 12)
+  // Three Stars is the JACKPOT: JACKPOT_MULTIPLIER x your bet, capped at what the kitty holds.
+
+  // ------------------------------------------------------------------------
+  // STARTING A SESSION
+  // ------------------------------------------------------------------------
+  // The state of the machine before anyone has sat down (the home screen).
+  function emptySession() {
+    return {
+      state: "home",
+      table: { players: [], current: 0, started: false, kitty: KITTY_START },
+      results: [], ballsLeft: 0, keepsTurn: false,
+      lastOutcome: { label: "", payout: 0, net: 0, capped: false, wanted: 0 },
+      outcomeKind: "none",
+      endInfo: { title: "", line2: "", note: "" }
+    };
+  }
+
+  // Sit people down. "typed" is the list of names as typed (some may be empty).
+  // Empty names become "Player" / "Player 2". Two people with the same name would share one scoreboard line,
+  // so a repeated name gets a number ("Sam", "Sam 2").
+  function newSession(typed) {
+    const S = emptySession();
+    const taken = {};
+    for (let i = 0; i < typed.length; i++) {
+      let name = String(typed[i]).trim();
+      if (name === "") {
+        name = (typed.length === 1) ? "Player" : "Player " + (i + 1);
+      }
+      let finalName = name;
+      let n = 2;
+      while (taken[finalName.toLowerCase()]) {
+        finalName = name + " " + n;
+        n = n + 1;
+      }
+      taken[finalName.toLowerCase()] = true;
+      S.table.players.push({
+        name: finalName,
+        key: finalName.toLowerCase(),
+        balance: STARTING_BALANCE,   // the player's stack
+        bet: BET_MIN,                // remembered between games
+        lastBet: BET_MIN,            // what the game in progress (or just finished) was played at
+        tiltWait: 0,                 // games to wait before Tilt is ready again (0 = ready)
+        biggestWin: 0,
+        active: true                 // false once the player is out of the rotation
+      });
+    }
+    S.state = "idle";
+    return S;
+  }
+
+  // ------------------------------------------------------------------------
+  // LOOKING AT THE TABLE
+  // ------------------------------------------------------------------------
+  function me(S) { return S.table.players[S.table.current]; }          // whose turn it is
+  function activePlayers(S) { return S.table.players.filter(function (p) { return p.active; }); }
+
+  // Index of the next active player after the current one, going round the table. -1 if nobody is left.
+  function nextActiveIndex(S) {
+    const count = S.table.players.length;
+    for (let step = 1; step <= count; step++) {
+      const index = (S.table.current + step) % count;
+      if (S.table.players[index].active) { return index; }
+    }
+    return -1;
+  }
+
+  // ------------------------------------------------------------------------
+  // BETS
+  // ------------------------------------------------------------------------
+  // A bet can never be more than the player holds, or outside BET_MIN..BET_MAX.
+  function clampBet(player) {
+    const most = Math.min(BET_MAX, Math.floor(player.balance));
+    player.bet = Math.max(BET_MIN, Math.min(player.bet, most));
+  }
+
+  // Raise or lower the current player's bet by 'step' dollars. Returns true if it actually changed.
+  function changeBet(S, step) {
+    const who = me(S);
+    const before = who.bet;
+    who.bet = who.bet + step;
+    clampBet(who);
+    return who.bet !== before;
+  }
+
+  // ------------------------------------------------------------------------
+  // PLAYING A GAME
+  // ------------------------------------------------------------------------
+  // The bet moves from the player's stack into the kitty and the game begins.
+  // Returns { ok: false } if the player can't afford it, otherwise { ok: true, firstGame: bool }.
+  function startGame(S) {
+    const who = me(S);
+    clampBet(who);
+    if (who.balance < who.bet) { return { ok: false }; }
+
+    const firstGame = !S.table.started;
+    who.balance = who.balance - who.bet;               // the bet moves from the stack...
+    S.table.kitty = S.table.kitty + who.bet;           // ...into the kitty
+    S.table.started = true;
+    who.lastBet = who.bet;
+
+    S.ballsLeft = BALLS_PER_GAME;
+    S.results = [];
+    S.keepsTurn = false;
+    S.state = "playing";
+    return { ok: true, firstGame: firstGame };
+  }
+
+  function plural(fruitName) {
+    if (fruitName === "Cherry") return "Cherries";
+    if (fruitName === "Peach")  return "Peaches";
+    return fruitName + "s";
+  }
+
+  // What do these fruits win? Returns the prize as a MULTIPLIER of the bet, or { jackpot: true }.
+  function evaluateGame(fruits) {
+    const stars  = fruits.filter(function (f) { return f === "Star"; }).length;
+    const others = fruits.filter(function (f) { return f !== "Star"; });
+
+    if (stars === 3) {
+      return { jackpot: true, label: "THREE STARS!" };
+    }
+    if (stars === 2) {
+      return { mult: PAYOUT_TWO_STARS[others[0]], label: "Two Stars + " + others[0] };
+    }
+    const first = others[0];
+    const allSame = others.every(function (f) { return f === first; });
+    if (allSame) {
+      if (stars === 0) {
+        return { mult: PAYOUT_THREE[first], label: "Three " + plural(first) + "!" };
+      }
+      return { mult: PAYOUT_WITH_STAR[first], label: "Wild Star + " + first };
+    }
+    return { mult: 0, label: "No match" };
+  }
+
+  // A ball has landed in a cup of this fruit. Returns { finished: bool }.
+  function ballLanded(S, fruitName) {
+    S.results.push(fruitName);
+    S.ballsLeft = S.ballsLeft - 1;
+    if (S.results.length >= BALLS_PER_GAME) {
+      finishGame(S);
+      return { finished: true };
+    }
+    return { finished: false };
+  }
+
+  // All the balls are in: work out the prize and pay it out of the kitty.
+  function finishGame(S) {
+    const who = me(S);
+    const multi = S.table.players.length > 1;          // wording: "You are out" for one player, "Priya is out" for several
+    const outcome = evaluateGame(S.results);
+    const bet = who.lastBet;
+
+    // THE POOL RULE: the prize is paid out of the kitty, so it can never be more than the kitty holds.
+    const wanted = outcome.jackpot ? JACKPOT_MULTIPLIER * bet : outcome.mult * bet;
+    const payout = Math.min(wanted, S.table.kitty);
+    S.table.kitty = S.table.kitty - payout;
+    who.balance = who.balance + payout;
+    who.biggestWin = Math.max(who.biggestWin, payout);
+
+    S.lastOutcome = { label: outcome.label, payout: payout, net: payout - bet, capped: payout < wanted, wanted: wanted };
+    S.keepsTurn = (payout >= KEEP_TURN_MIN_PAYOUT);    // a real win means you play again (a jackpot too)
+    if (who.tiltWait > 0) { who.tiltWait = who.tiltWait - 1; }
+
+    if (outcome.jackpot)                    { S.outcomeKind = "jackpot"; }
+    else if (payout >= SOUND_BIG_WIN_AT)    { S.outcomeKind = "big"; }
+    else if (payout > 0)                    { S.outcomeKind = "small"; }
+    else                                    { S.outcomeKind = "none"; }
+
+    if (who.balance < BET_MIN) {
+      // Out of money: out of the rotation (for now).
+      S.endInfo = {
+        title: "Out of money!",
+        line2: (multi ? who.name + " is out" : "You are out") + " with " + moneyText(who.balance),
+        note: ""
+      };
+      who.active = false;
+      S.keepsTurn = false;
+      S.state = "gameover";
+    } else {
+      S.state = "result";
+    }
+  }
+
+  // Hand the turn to the next player who is still in. Returns false if nobody is left.
+  function advanceTurn(S) {
+    const next = nextActiveIndex(S);
+    if (next === -1) { return false; }
+    S.table.current = next;
+    clampBet(me(S));                                   // their remembered bet, but never more than they hold
+    S.results = [];
+    S.keepsTurn = false;
+    S.ballsLeft = 0;
+    S.state = "idle";
+    return true;
+  }
+
+  // Everyone is finished: show the settle-up.
+  function showFinal(S) {
+    S.state = "final";
+  }
+
+  // The current player leaves the rotation ("End game" / "Leave table" / "Cash out").
+  // Returns { action: "none" }   nothing to do (already finished),
+  //         { action: "home" }   nobody has put a coin in yet, so just go back to the home screen,
+  //         { action: "left", forfeited: bool, net: dollars to put on the scoreboard (0 if nothing was forfeited) }.
+  function leaveTable(S) {
+    if (S.state === "home" || S.state === "gameover" || S.state === "final") { return { action: "none" }; }
+    if (S.state === "idle" && !S.table.started) { return { action: "home" }; }
+
+    const who = me(S);
+    const multi = S.table.players.length > 1;
+    const forfeited = (S.state === "playing");         // were we in the middle of a game? Its bet is already in the kitty, so it is lost.
+    who.active = false;
+    S.endInfo = {
+      title: multi ? "Left the table" : "Game ended",
+      line2: (multi ? who.name + " walks" : "You walk") + " away with " + moneyText(who.balance),
+      note: forfeited ? "(The game in progress was forfeited)" : ""
+    };
+    S.state = "gameover";
+    return { action: "left", forfeited: forfeited, net: forfeited ? -who.lastBet : 0 };
+  }
+
+  // SKIPPING a player who is away or too slow. Unlike leaving, a skipped player STAYS in the rotation (their seat and money
+  // are kept) and gets their turn again when it comes round. If they were in the middle of a game, that game is forfeited:
+  // the bet is already in the kitty, so it stays there. Returns { ok: false } if there is nobody to hand the turn to.
+  function skipTurn(S) {
+    if (S.state === "home" || S.state === "gameover" || S.state === "final") { return { ok: false }; }
+    if (activePlayers(S).length <= 1) { return { ok: false }; }
+    const who = me(S);
+    const forfeited = (S.state === "playing");
+    advanceTurn(S);
+    return { ok: true, name: who.name, forfeited: forfeited };
+  }
+
+  // ------------------------------------------------------------------------
+  // TILT (once every TILT_EVERY_GAMES of a player's own games)
+  // ------------------------------------------------------------------------
+  // 'ballRolling' is something only the physics knows, so the caller tells us.
+  function canTilt(S, ballRolling) {
+    return S.state === "playing" && ballRolling && me(S).tiltWait === 0;
+  }
+  // Uses up the player's tilt and says what shove to give the ball: { ok: true, direction: -1 or 1, strength }.
+  // 'rng' is a function giving random numbers between 0 and 1 (Math.random by default; tests can pass their own).
+  function useTilt(S, ballRolling, rng) {
+    rng = rng || Math.random;
+    if (S.state !== "playing") { return { ok: false, reason: "" }; }
+    if (!ballRolling) { return { ok: false, reason: "Tilt works while the ball is rolling" }; }
+    const who = me(S);
+    if (who.tiltWait > 0) {
+      return { ok: false, reason: "Tilt ready in " + who.tiltWait + (who.tiltWait === 1 ? " game" : " games") };
+    }
+    who.tiltWait = TILT_EVERY_GAMES;
+    return { ok: true, direction: (rng() < 0.5) ? -1 : 1, strength: (rng() < 0.5) ? TILT_SMALL : TILT_LARGE };
+  }
+
+  // ------------------------------------------------------------------------
+  // THE SETTLE-UP
+  // ------------------------------------------------------------------------
+  // Everyone put in STARTING_BALANCE plus an equal share of the opening kitty. At the end the kitty that is left
+  // is shared equally, so each player takes home their stack plus their share. The nets add up to zero.
+  function settle(S) {
+    const n = S.table.players.length;
+    const share = S.table.kitty / n;
+    const putIn = STARTING_BALANCE + KITTY_START / n;
+    const rows = S.table.players.map(function (p) {
+      return { name: p.name, takeHome: p.balance + share, net: p.balance + share - putIn };
+    });
+    rows.sort(function (a, b) { return b.takeHome - a.takeHome; });
+    return { share: share, putIn: putIn, kitty: S.table.kitty, rows: rows };
+  }
+
+  // Dollars as text for the engine's own messages ("$8" or "$8.33"). The page has its own copy for the screen.
+  function moneyText(amount) {
+    const v = Math.round(amount * 100) / 100;
+    return "$" + (Number.isInteger(v) ? v : v.toFixed(2));
+  }
+
+  return {
+    STARTING_BALANCE: STARTING_BALANCE, KITTY_START: KITTY_START, BET_MIN: BET_MIN, BET_MAX: BET_MAX,
+    JACKPOT_MULTIPLIER: JACKPOT_MULTIPLIER, TILT_EVERY_GAMES: TILT_EVERY_GAMES, TILT_SMALL: TILT_SMALL,
+    TILT_LARGE: TILT_LARGE, BALLS_PER_GAME: BALLS_PER_GAME, MAX_PLAYERS: MAX_PLAYERS,
+    SOUND_BIG_WIN_AT: SOUND_BIG_WIN_AT, KEEP_TURN_MIN_PAYOUT: KEEP_TURN_MIN_PAYOUT,
+    PAYOUT_THREE: PAYOUT_THREE, PAYOUT_WITH_STAR: PAYOUT_WITH_STAR, PAYOUT_TWO_STARS: PAYOUT_TWO_STARS,
+    emptySession: emptySession, newSession: newSession, me: me, activePlayers: activePlayers,
+    nextActiveIndex: nextActiveIndex, clampBet: clampBet, changeBet: changeBet, startGame: startGame,
+    evaluateGame: evaluateGame, ballLanded: ballLanded, advanceTurn: advanceTurn, showFinal: showFinal,
+    leaveTable: leaveTable, skipTurn: skipTurn, canTilt: canTilt, useTilt: useTilt, settle: settle, plural: plural
+  };
+}));
+
 </script>
 <script>
   // NEW IN 9: if this line runs, scripts work, so hide the 'this page cannot run the game' notice.
@@ -629,43 +1017,30 @@
   const DIVIDER_WIDTH = 4;
 
   // --- Walls ---
-  const WALL_PEGS_REMOVED_AT_BOTTOM = 1;
+  const WALL_PEGS_REMOVED_AT_BOTTOM = 0;   // CHANGED IN 10: 1 -> 0, so the 4th row also has half pegs touching both walls, like the 2nd row
   const WALL_KICK_MIN = 0;            // wall kick is OFF while both are 0
   const WALL_KICK_MAX = 0;
 
   // --- Money and game rules ---
-  // CHANGED IN 5: all money is in dollars now.
-  const STARTING_BALANCE = 20;        // dollars each new player starts with
-  const STAKE            = 2;         // dollars to play one game
-  const BALLS_PER_GAME   = 3;         // balls in one game
-  const MAX_PLAYERS      = 5;         // NEW IN 6: most players that can sit at the machine together
+  // CHANGED IN 11: these numbers now live in engine.js (the rulebook), so the page and the future server share ONE copy.
+  // The line below simply copies them into variables of the same names, so the rest of this file reads as before.
+  // To change a rule (starting money, bet range, prizes, tilt) edit the settings at the top of engine.js.
+  const { STARTING_BALANCE, KITTY_START, BET_MIN, BET_MAX, JACKPOT_MULTIPLIER, TILT_EVERY_GAMES,
+          BALLS_PER_GAME, MAX_PLAYERS, PAYOUT_THREE, PAYOUT_WITH_STAR, PAYOUT_TWO_STARS } = Rules;
+  const HINT_FRAMES      = 650;       // how long the opening "Hint:" stays on screen, in game steps (about 4.5 seconds at the default speed). Screen only, so it stays here.
 
   // --- Sound (NEW IN 7) ---
   const SOUND_DEFAULT_ON  = true;     // sound starts on. (After someone taps the sound button, the browser remembers their choice.)
   const SOUND_VOLUME      = 0.7;      // CHANGED IN 9 (0.5 -> 0.7): master volume, 0 (silent) to 1 (full). Everything is scaled by this.
   const SOUND_ECHO        = 0.35;     // NEW IN 9: how much room echo (reverb) is mixed in. 0 = dry and flat, 0.6 = very echoey.
-  const SOUND_BIG_WIN_AT  = 20;       // a win of this many dollars or more gets the big jingle instead of the small one
   const SOUND_PEG_MIN_GAP = 0.03;     // seconds. Peg pings closer together than this are skipped, so a fast ball does not become a buzz.
   const RATCHET_STEPS     = 16;       // number of notes while winding the spring from empty to full (each plays the next note up the scale)
-  const JACKPOT_START        = 100;   // the jackpot starts here, and resets here after someone wins it
-  const JACKPOT_CONTRIBUTION = 1;     // dollars added to the jackpot every time a game is played
   const RESHUFFLE_EACH_GAME  = true;  // shuffle the cups at the start of every game
 
   // NEW IN 5: scoreboard and jackpot pile settings
   const HISTORY_GAMES  = 3;           // how many recent games per player the scoreboard remembers
-  const POT_COIN_VALUE = 4;           // each drawn coin in the jackpot pile stands for this many dollars
+  const POT_COIN_VALUE = 2;           // each drawn coin in the jackpot pile stands for this many dollars
   const POT_MAX_COINS  = 120;         // the pile stops growing after this many coins
-
-  // PAYOUTS in dollars. (First draft numbers. We will tune them later by simulating thousands of games.)
-  const PAYOUT_THREE       = { Cherry: 8, Peach: 12, Pineapple: 24, Lemon: 60 };
-  const PAYOUT_WITH_STAR   = { Cherry: 3, Peach: 4, Pineapple: 8, Lemon: 20, Bell: 100 };
-  const PAYOUT_THREE_STARS = 100;
-  const CONSOLATION_FRUIT  = "Cherry";
-  const PAYOUT_CONSOLATION = 1;
-  // NEW IN 9: WINNER PLAYS AGAIN. A game that pays at least this many dollars keeps the turn with the same player.
-  // The $1 consolation prize does not count (it is less than the $2 stake, so it is not really a win).
-  // Set it very high (such as 9999) to switch the rule off. Three Bells (the jackpot) always ends your session.
-  const KEEP_TURN_MIN_PAYOUT = 2;
 
   // CHANGED IN 9: "colour" is the cup's background at the top and "colourDeep" is the same colour a shade darker at the
   // bottom (a glossy candy look). The strong hot pink for the Bell is there so it stands out. The pictures come from FRUIT_SVG just below.
@@ -828,7 +1203,10 @@
       const dividerX = cups[i].left;
       const wall = Bodies.rectangle(dividerX, BOARD_HEIGHT - CUP_HEIGHT / 2, DIVIDER_WIDTH, CUP_HEIGHT,
                                     { isStatic: true, restitution: 0.3 });
-      const cap  = Bodies.circle(dividerX, BOARD_HEIGHT - CUP_HEIGHT, DIVIDER_WIDTH,
+      // CHANGED IN 10: the rounded top of each divider was radius DIVIDER_WIDTH (4), wider than the divider itself, which
+      // narrowed the opening of the Star cup to about 15 px for an 18 px ball, so balls wedged on top of it and the Star was almost
+      // unreachable. Now the radius is half the divider's width (2), the same as it is drawn.
+      const cap  = Bodies.circle(dividerX, BOARD_HEIGHT - CUP_HEIGHT, DIVIDER_WIDTH / 2,
                                  { isStatic: true, restitution: PEG_BOUNCE });
       dividerBodies.push(wall, cap);
     }
@@ -858,8 +1236,8 @@
   //   { pot: 104, lastName: "Manu", lastNames: ["Manu", "Priya"], players: { "manu": { name: "Manu", games: [6, -2, -2] } } }
   // NEW IN 6: "lastNames" remembers who was playing last time, so the name boxes are filled in for you.
   // "games" holds each recent game's NET result in dollars (prize minus stake).
-  const STORAGE_KEY = "frueets-v1";
-  let store = { pot: JACKPOT_START, lastName: "", lastNames: [], players: {} };
+  const STORAGE_KEY = "frueets-v2";     // CHANGED IN 10: new name, so scoreboards from the old rules are not mixed in
+  let store = { lastName: "", lastNames: [], players: {} };
 
   function loadStore() {
     // try/catch: if the browser refuses to let us read the notebook, carry on with a fresh one.
@@ -867,7 +1245,6 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
-        if (typeof data.pot === "number")        store.pot = data.pot;
         if (typeof data.lastName === "string")   store.lastName = data.lastName;
         if (Array.isArray(data.lastNames)) {
           store.lastNames = data.lastNames.filter(function (n) { return typeof n === "string"; }).slice(0, MAX_PLAYERS);
@@ -907,50 +1284,26 @@
   // ============================================================
   // 6. THE MACHINE'S MEMORY
   // ============================================================
-  // gameState is the "mode" the machine is in:
-  //   "home"     on the home screen (name entry and scoreboard)
-  //   "idle"     at the game screen, it is someone's turn and they are waiting to insert the coin
-  //   "playing"  a game is in progress
-  //   "result"   a game just finished, the player can carry on, pass the phone on, or cash out
-  //   "gameover" this player is out of the rotation (out of coins, cashed out, or won the jackpot)
-  //   "final"    NEW IN 6: everyone is finished, showing the final standings
-  let gameState = "home";
+  // CHANGED IN 11: everything the RULES need to remember (whose turn, who has how much, the kitty, the fruit of the
+  // current game...) lives in ONE object, S, which the rulebook (engine.js) looks after. Read engine.js to see its shape.
+  // The page keeps only what is about the screen and the physics: the ball, the power meter, messages, timers.
+  //   S.state is the "mode" the machine is in:
+  //     "home"     on the home screen (name entry and scoreboard)
+  //     "idle"     at the game screen, someone is choosing their bet and waiting to insert
+  //     "playing"  a game is in progress
+  //     "result"   a game just finished: play again, pass on, or cash out
+  //     "gameover" this player is out of the rotation (out of money or cashed out)
+  //     "final"    everyone is finished: the settle-up
+  let S = Rules.emptySession();
 
-  // NEW IN 6: THE TABLE. Everyone sitting at the machine, and whose turn it is.
-  // Analogy: a card table. "players" is the list of seats, "current" points at whoever is playing now.
-  //   players[i] = { name, key, balance, biggestWin, active }
-  //   "active" stays true while a player is still in the rotation. It turns false when they are out.
-  //   "started" turns true once anyone has put a coin in (until then "Back" just returns to the home screen).
-  let table = { players: [], current: 0, started: false };
+  // Short names so the rest of the page reads naturally. Each just asks the rulebook.
+  function me()               { return Rules.me(S); }                // the player whose turn it is
+  function activePlayers()    { return Rules.activePlayers(S); }
+  function nextActiveIndex()  { return Rules.nextActiveIndex(S); }
+  const clampBet     = Rules.clampBet;
+  const evaluateGame = Rules.evaluateGame;
 
-  // me() = the player whose turn it is. We use it everywhere instead of the old single "balance" variable.
-  function me() {
-    return table.players[table.current];
-  }
-
-  function activePlayers() {
-    return table.players.filter(function (p) { return p.active; });
-  }
-
-  // Index of the next active player after the current one, going round the table. Returns -1 if nobody is left.
-  function nextActiveIndex() {
-    const count = table.players.length;
-    for (let step = 1; step <= count; step++) {
-      const index = (table.current + step) % count;
-      if (table.players[index].active) {
-        return index;
-      }
-    }
-    return -1;
-  }
-
-  let ballsRemaining = 0;
-  let results        = [];      // fruits the current game's balls landed in, e.g. ["Cherry", "Star"]
-
-  let lastOutcome = { label: "", payout: 0 };
-  let keepsTurn   = false;      // NEW IN 9: true when the game just finished won a real prize, so the same player goes again
-  let outcomeKind = "none";     // NEW IN 7: which jingle to play when a game ends: "jackpot", "big", "small", "consolation" or "none" 
-  let endInfo     = { title: "", line2: "", note: "" };
+  let hintFrames  = 0;          // NEW IN 10: frames left to show the opening hint (0 = not showing)
 
   let charging      = false;
   let power         = 0;
@@ -961,14 +1314,17 @@
   let overlayDelay  = 0;        // frames to wait before showing the overlay (so you see the last ball land)
 
   // Format dollars for display, e.g. 8 becomes "$8"
+  // CHANGED IN 10: shares of the kitty can have cents, so whole dollars show as "$8" and others as "$8.33".
   function money(amount) {
-    return "$" + amount;
+    const v = Math.round(amount * 100) / 100;
+    return "$" + (Number.isInteger(v) ? v : v.toFixed(2));
   }
 
   // Format a win or loss with a sign, e.g. 6 becomes "+$6" and -2 becomes "-$2"
   function signed(amount) {
-    if (amount > 0) return "+$" + amount;
-    if (amount < 0) return "-$" + Math.abs(amount);
+    const v = Math.round(amount * 100) / 100;
+    if (v > 0) return "+" + money(v);
+    if (v < 0) return "-" + money(Math.abs(v));
     return "$0";
   }
 
@@ -977,11 +1333,12 @@
   }
 
   function canFire() {
-    return gameState === "playing" && ballsRemaining > 0 && !ballIsRolling();
+    return S.state === "playing" && S.ballsLeft > 0 && !ballIsRolling();
   }
 
   // ============================================================
-  // 7. THE GAME RULES (the state machine)
+  // 7. THE GAME FLOW (page side). The RULES are in engine.js; each function here asks the rulebook to do the rule,
+  //    then does the screen and sound things that go with it.
   // ============================================================
   function removeBall() {
     if (ball !== null) {
@@ -991,8 +1348,7 @@
     ballLanded = false;
   }
 
-  // NEW IN 5: from the home screen, sit down at the machine.
-  // NEW IN 6: now we sit down with 1 to 5 players. Each gets their own balance.
+  // From the home screen, sit down at the machine with 1 to 5 players.
   function enterGameFromHome() {
     const typed = readNames();                       // whatever is in the name boxes, in order
 
@@ -1001,34 +1357,8 @@
     store.lastName = store.lastNames[0];
     saveStore();
 
-    // Build the seats. Two people with the same name would share one scoreboard line,
-    // so if a name repeats we add a number to it ("Sam", "Sam 2").
-    const taken = {};
-    table = { players: [], current: 0, started: false };
-    for (let i = 0; i < typed.length; i++) {
-      let name = typed[i].trim();
-      if (name === "") {
-        name = (typed.length === 1) ? "Player" : "Player " + (i + 1);
-      }
-      let finalName = name;
-      let n = 2;
-      while (taken[finalName.toLowerCase()]) {
-        finalName = name + " " + n;
-        n = n + 1;
-      }
-      taken[finalName.toLowerCase()] = true;
-      table.players.push({
-        name: finalName,
-        key: finalName.toLowerCase(),
-        balance: STARTING_BALANCE,
-        biggestWin: 0,
-        active: true
-      });
-    }
+    S = Rules.newSession(typed);                     // the rulebook seats the players (fixing empty and repeated names)
 
-    ballsRemaining = 0;
-    results = [];
-    keepsTurn = false;
     charging = false;
     power = 0;
     removeBall();
@@ -1036,7 +1366,6 @@
     buildPlayerStrip();
     setCelebrate(false);
 
-    gameState = "idle";
     resultText = "";
     overlayDelay = 0;
     showScreen("game");
@@ -1045,10 +1374,10 @@
     renderOverlay();
   }
 
-  // NEW IN 5: back to the home screen.
+  // Back to the home screen.
   function goHome() {
     setCelebrate(false);
-    gameState = "home";
+    S.state = "home";
     charging = false;
     power = 0;
     removeBall();
@@ -1057,17 +1386,8 @@
   }
 
   function startGame() {
-    const who = me();
-    if (who.balance < STAKE) return;
-
-    who.balance = who.balance - STAKE;
-    table.started = true;
-    store.pot = store.pot + JACKPOT_CONTRIBUTION;     // part of the stake feeds the jackpot
-    saveStore();
-
-    ballsRemaining = BALLS_PER_GAME;
-    results = [];
-    keepsTurn = false;
+    const started = Rules.startGame(S);              // the bet moves from stack to kitty (if the player can afford it)
+    if (!started.ok) return;
 
     removeBall();
     if (RESHUFFLE_EACH_GAME) {
@@ -1076,178 +1396,72 @@
     reshuffleUsed = false;
 
     setCelebrate(false);
-    gameState = "playing";
     resultText = "Hold the pull button for ball 1";
+    if (started.firstGame) {
+      resultText = HINT_TEXT;            // shown once, at the very start of the session
+      hintFrames = HINT_FRAMES;
+    }
     updateUi();
     renderOverlay();
-    soundCoinInsert();                   // NEW IN 7
+    soundCoinInsert();
   }
 
-  function handleBallLanded(fruitName) {
-    soundLand(fruitName);                // NEW IN 7
-    results.push(fruitName);
-    ballsRemaining = ballsRemaining - 1;
+  const HINT_TEXT = "Hint: Aim for the \u2B50";
 
-    if (results.length >= BALLS_PER_GAME) {
-      finishGame();
+  function handleBallLanded(fruitName) {
+    soundLand(fruitName);
+    const r = Rules.ballLanded(S, fruitName);        // the rulebook counts the ball and, on the last one, pays the prize
+    if (r.finished) {
+      recordGame(S.lastOutcome.net);                 // remember this game on the scoreboard
+      resultText = S.lastOutcome.label;
+      overlayDelay = 45;                             // wait about 0.75 seconds so you see the last ball land
     } else {
-      resultText = fruitName + "! Now ball " + (results.length + 1);
+      resultText = fruitName + "! Now ball " + (S.results.length + 1);
     }
     updateUi();
   }
 
-  function plural(fruitName) {
-    if (fruitName === "Cherry") return "Cherries";
-    if (fruitName === "Peach")  return "Peaches";
-    return fruitName + "s";
-  }
-
-  function evaluateGame(fruits) {
-    const stars  = fruits.filter(function (f) { return f === "Star"; }).length;
-    const others = fruits.filter(function (f) { return f !== "Star"; });
-
-    if (stars === 3) {
-      return { payout: PAYOUT_THREE_STARS, label: "Three Stars!" };
-    }
-
-    const first = others[0];
-    const allSame = others.every(function (f) { return f === first; });
-
-    if (allSame) {
-      if (stars === 0) {
-        if (first === "Bell") {
-          return { jackpot: true, label: "THREE BELLS!" };
-        }
-        return { payout: PAYOUT_THREE[first], label: "Three " + plural(first) + "!" };
-      }
-      return { payout: PAYOUT_WITH_STAR[first], label: "Wild Star + " + first };
-    }
-
-    const count = fruits.filter(function (f) { return f === CONSOLATION_FRUIT; }).length;
-    if (count === 2) {
-      return { payout: PAYOUT_CONSOLATION, label: "Two " + plural(CONSOLATION_FRUIT) };
-    }
-
-    return { payout: 0, label: "No match" };
-  }
-
-  function finishGame() {
-    const who = me();
-    const multi = table.players.length > 1;          // wording: "You win" for one player, "Priya wins" for several
-    const outcome = evaluateGame(results);
-
-    keepsTurn = false;                               // NEW IN 9: reset; set below if this game wins
-    if (outcome.jackpot) {
-      const prize = store.pot;
-      who.balance = who.balance + prize;
-      who.biggestWin = Math.max(who.biggestWin, prize);
-      recordGame(prize - STAKE);                     // remember this game on the scoreboard
-      lastOutcome = { label: outcome.label, payout: prize };
-      endInfo = {
-        title: "JACKPOT!",
-        line2: (multi ? who.name + " emptied" : "You emptied") + " the machine and won " + money(prize) + "!",
-        note: (multi ? who.name + " finishes" : "You finish") + " with " + money(who.balance)
-      };
-      store.pot = JACKPOT_START;                     // the machine is topped up for the next player
-      saveStore();
-      outcomeKind = "jackpot";                       // NEW IN 7: which jingle to play
-      who.active = false;                            // three Bells ends THIS player's session. The others carry on.
-      gameState = "gameover";
-      resultText = "JACKPOT!";
-      overlayDelay = 45;
-      return;
-    }
-
-    who.balance = who.balance + outcome.payout;
-    who.biggestWin = Math.max(who.biggestWin, outcome.payout);
-    keepsTurn = (outcome.payout >= KEEP_TURN_MIN_PAYOUT);    // NEW IN 9: a real win means you play again
-    recordGame(outcome.payout - STAKE);              // remember this game on the scoreboard
-    lastOutcome = { label: outcome.label, payout: outcome.payout };
-
-    // NEW IN 7: pick the jingle for this result
-    if (outcome.payout >= SOUND_BIG_WIN_AT)        outcomeKind = "big";
-    else if (outcome.payout > PAYOUT_CONSOLATION)  outcomeKind = "small";
-    else if (outcome.payout > 0)                   outcomeKind = "consolation";
-    else                                           outcomeKind = "none";
-
-    if (who.balance < STAKE) {
-      endInfo = {
-        title: "Out of coins!",
-        line2: (multi ? who.name + " finishes" : "You finish") + " with " + money(who.balance),
-        note: ""
-      };
-      who.active = false;                            // can't afford another game, so out of the rotation
-      keepsTurn = false;
-      gameState = "gameover";
-    } else {
-      gameState = "result";
-    }
-    resultText = outcome.label;
-    overlayDelay = 45;                               // wait about 0.75 seconds so you see the last ball land
-  }
-
-  // NEW IN 6: hand the phone to the next player who is still in.
-  // The new player starts at "idle": the overlay says whose turn it is and waits for their coin.
+  // Hand the phone to the next player who is still in. They start at "idle": the overlay says whose turn it is.
   function advanceTurn() {
-    const next = nextActiveIndex();
-    if (next === -1) return;
-    table.current = next;
-
+    if (!Rules.advanceTurn(S)) return;
     charging = false;
     power = 0;
     removeBall();
-    results = [];                                    // fresh counters for the new player
-    keepsTurn = false;
-    ballsRemaining = 0;
     reshuffleUsed = false;
     resultText = "";
     overlayDelay = 0;
     setCelebrate(false);
-    gameState = "idle";
     updateUi();
     renderOverlay();
-    soundPass();                                     // NEW IN 7
+    soundPass();
   }
 
-  // NEW IN 6: everyone is done. Show the final standings.
+  // Everyone is done. Show the settle-up.
   function showFinal() {
+    Rules.showFinal(S);
     charging = false;
     power = 0;
     removeBall();
-    gameState = "final";
     resultText = "";
     updateUi();
     renderOverlay();
-    soundFanfare();                                  // NEW IN 7
+    soundFanfare();
   }
 
   // The current player leaves the rotation: "End game" for one player, "Leave table" / "Cash out" for several.
   function endGameEarly() {
-    if (gameState === "home" || gameState === "gameover" || gameState === "final") return;
-
-    // Nobody has put a coin in yet: just go back to the home screen.
-    if (gameState === "idle" && !table.started) {
+    const r = Rules.leaveTable(S);
+    if (r.action === "none") return;
+    if (r.action === "home") {                       // nobody has put a coin in yet: just go back to the home screen
       goHome();
       return;
     }
-
-    const who = me();
-    const multi = table.players.length > 1;
-    const forfeited = (gameState === "playing");     // were we in the middle of a game?
-    if (forfeited) {
-      recordGame(-STAKE);                            // the stake is lost, and the scoreboard shows it
+    if (r.forfeited) {
+      recordGame(r.net);                             // the bet is lost, and the scoreboard shows it
     }
     charging = false;
     power = 0;
     removeBall();
-    who.active = false;
-
-    endInfo = {
-      title: multi ? "Left the table" : "Game ended",
-      line2: (multi ? who.name + " walks" : "You walk") + " away with " + money(who.balance),
-      note: forfeited ? "(The game in progress was forfeited)" : ""
-    };
-    gameState = "gameover";
     resultText = "";
     overlayDelay = 0;
     updateUi();
@@ -1298,8 +1512,36 @@
     }
   }
 
+  // NEW IN 10: THE TILT. One button, no choice: it gives the rolling ball a sideways shove in a random direction
+  // and a random strength (small or large). Each player may use it once in every TILT_EVERY_GAMES games of their own.
+  // NEW IN 14a: make the board tilt on screen. direction is -1 (left) or 1 (right); a bigger shove tilts further.
+  // The board rotates (right side down for a shove to the right), then rocks back to level. It is a CSS animation (see "@keyframes tilt").
+  function tiltBoard(direction, strength) {
+    const frame = document.getElementById("boardWrap");
+    const degrees = (strength >= TILT_LARGE_SHOWN ? 7 : 4) * direction;
+    frame.style.setProperty("--tilt", degrees + "deg");
+    frame.classList.remove("tilting");
+    void frame.offsetWidth;                          // a trick: forces the browser to notice the class was removed, so the animation can restart
+    frame.classList.add("tilting");
+    setTimeout(function () { frame.classList.remove("tilting"); }, 750);
+  }
+  const TILT_LARGE_SHOWN = Rules.TILT_LARGE;         // a shove this strong (or more) tilts the board further
+
+  function canTilt() {
+    return Rules.canTilt(S, ballIsRolling());
+  }
+  function tryTilt() {
+    const t = Rules.useTilt(S, ballIsRolling());     // the rulebook checks the rules and picks a random direction and strength
+    if (!t.ok) { if (t.reason) resultText = t.reason; return; }
+    Body.setVelocity(ball, { x: ball.velocity.x + t.direction * t.strength, y: ball.velocity.y });   // the page shoves the ball
+    resultText = "TILT!";
+    tiltBoard(t.direction, t.strength);              // NEW IN 14a: the whole board visibly tilts the way the ball was shoved
+    soundTilt();
+    updateUi();
+  }
+
   function tryReshuffle() {
-    if (gameState !== "playing") return;
+    if (S.state !== "playing") return;
     if (ballIsRolling()) {
       resultText = "Wait for the ball to land";
       return;
@@ -1603,6 +1845,12 @@
     glock(noteHz(15), 0.5, 0.16, 0.14);
   }
 
+  function soundTilt() {                 // NEW IN 10: a rattly thud and a wobbly low note
+    if (!soundReady()) return;
+    pop(180, 0.5, 0);
+    glock(noteHz(2), 0.3, 0.25, 0.04);
+    glock(noteHz(0), 0.3, 0.25, 0.1);
+  }
   function soundShuffle() {
     for (let i = 0; i < 6; i++) {
       pop(380 + i * 80 + Math.random() * 40, 0.09, i * 0.05);
@@ -1628,11 +1876,11 @@
   }
 
   // ---- The end-of-game jingles ----
-  // outcomeKind is set by finishGame. We play the jingle at the moment the result card appears.
+  // S.outcomeKind is set by finishGame. We play the jingle at the moment the result card appears.
   function playOutcomeSound() {
     if (!soundReady()) return;
 
-    if (outcomeKind === "jackpot") {
+    if (S.outcomeKind === "jackpot") {
       // Three rising waves of notes, a huge chord, a deep swell, and a shower of sparkles.
       for (let wave = 0; wave < 3; wave++) {
         run([5, 7, 9, 10, 12, 14, 15, 17, 19], 0.065, 0.2, wave * 0.8);
@@ -1644,16 +1892,16 @@
       tone(196, 2.2, { type: "triangle", volume: 0.10, delay: 2.4, attack: 0.2, echo: 0.2 });
       noise(1.2, { freq: 600, endFreq: 5000, q: 0.8, volume: 0.10, delay: 1.5 });     // a rising "whoosh"
       sparkleShower(90, 3.6, 0.07);
-    } else if (outcomeKind === "big") {
+    } else if (S.outcomeKind === "big") {
       run([5, 7, 9, 10, 12, 14, 15], 0.085, 0.2, 0);
       [10, 12, 14].forEach(function (s) {
         glock(noteHz(s), 1.0, 0.16, 0.7);
       });
       sparkleShower(24, 1.6, 0.08);
-    } else if (outcomeKind === "small") {
+    } else if (S.outcomeKind === "small") {
       run([7, 9, 10], 0.1, 0.2, 0);
       sparkleShower(6, 0.5, 0.08);
-    } else if (outcomeKind === "consolation") {
+    } else if (S.outcomeKind === "consolation") {
       glock(noteHz(12), 0.6, 0.2, 0);
     } else {
       // No win: a soft, sympathetic "aww", two notes sliding down. Gentle, not harsh.
@@ -1662,7 +1910,7 @@
     }
 
     // Winning a real prize earns another turn: a cheerful rising "whoosh-ding" says so.
-    if (keepsTurn) {
+    if (S.keepsTurn) {
       noise(0.35, { freq: 500, endFreq: 4000, q: 0.8, volume: 0.10, delay: 0.5 });
       glock(noteHz(17), 0.6, 0.18, 0.8);
     }
@@ -1785,6 +2033,11 @@
   const gaugeFill     = document.getElementById("gaugeFill");
   const pullBtn       = document.getElementById("pullBtn");
   const reshuffleBtn  = document.getElementById("reshuffleBtn");
+  const tiltBtn       = document.getElementById("tiltBtn");
+  const betRowEl      = document.getElementById("betRow");
+  const betLabelEl    = document.getElementById("betLabel");
+  const betValEl      = document.getElementById("betVal");
+  const howModal      = document.getElementById("howModal");
   const endBtn        = document.getElementById("endBtn");
   const payModal      = document.getElementById("payModal");
 
@@ -1894,11 +2147,13 @@
     }
   }
 
+  // CHANGED IN 10: the pile is the KITTY. On the home screen (no game yet) it shows the opening kitty.
   function updatePots() {
-    drawPotPile(document.getElementById("potBig"), store.pot);
-    drawPotPile(document.getElementById("potMini"), store.pot);
-    setText(document.getElementById("potBigAmount"), money(store.pot));
-    setText(document.getElementById("potMiniAmount"), money(store.pot));
+    const kitty = (S.state === "home") ? KITTY_START : S.table.kitty;
+    drawPotPile(document.getElementById("potBig"), kitty);
+    drawPotPile(document.getElementById("potMini"), kitty);
+    setText(document.getElementById("potBigAmount"), money(kitty));
+    setText(document.getElementById("potMiniAmount"), money(kitty));
   }
 
   // ---- The ticket (three counters that turn into fruit) ----
@@ -1915,16 +2170,16 @@
   function updateSlots() {
     const slotEls = slotsEl.children;
     for (let i = 0; i < slotEls.length; i++) {
-      if (i < results.length) {
+      if (i < S.results.length) {
         // This ball has been played: show the fruit picture. (We only rebuild the picture when the fruit changes.)
         slotEls[i].className = "slot filled";
-        if (slotEls[i].getAttribute("data-fruit") !== results[i]) {
-          slotEls[i].setAttribute("data-fruit", results[i]);
-          slotEls[i].innerHTML = fruitImgTag(results[i], 44);
+        if (slotEls[i].getAttribute("data-fruit") !== S.results[i]) {
+          slotEls[i].setAttribute("data-fruit", S.results[i]);
+          slotEls[i].innerHTML = fruitImgTag(S.results[i], 44);
         }
       } else {
         // Not played yet: a purple counter with its number. The next ball to be played gets a glow.
-        const isNext = (gameState === "playing" && i === results.length);
+        const isNext = (S.state === "playing" && i === S.results.length);
         slotEls[i].className = "slot counter" + (isNext ? " current" : "");
         if (slotEls[i].hasAttribute("data-fruit")) {
           slotEls[i].removeAttribute("data-fruit");
@@ -1939,7 +2194,7 @@
   // updatePlayerStrip then only changes the words and the highlight.
   function buildPlayerStrip() {
     playersEl.innerHTML = "";
-    const multi = table.players.length > 1;
+    const multi = S.table.players.length > 1;
     playersEl.classList.toggle("solo", !multi);
     // Layout trick: five chips need the full width of the screen to fit their names. So with several players
     // the little jackpot pile hops from the top bar into the ticket card, where there is spare room. Alone, it stays put.
@@ -1959,7 +2214,7 @@
       ticketLabelEl.classList.add("hidden");
       ticket.appendChild(document.querySelector(".potMini"));
     }
-    for (let i = 0; i < table.players.length; i++) {
+    for (let i = 0; i < S.table.players.length; i++) {
       const chip = document.createElement("div");
       chip.className = "pChip";
       const nameEl = document.createElement("span");
@@ -1975,8 +2230,8 @@
   function updatePlayerStrip() {
     const chips = playersEl.children;
     for (let i = 0; i < chips.length; i++) {
-      const p = table.players[i];
-      const isTurn = (i === table.current && p.active && gameState !== "final");
+      const p = S.table.players[i];
+      const isTurn = (i === S.table.current && p.active && S.state !== "final");
       const wanted = "pChip" + (isTurn ? " current" : "") + (p.active ? "" : " out");
       if (chips[i].className !== wanted) {
         chips[i].className = wanted;
@@ -1987,8 +2242,8 @@
   }
 
   function updateUi() {
-    if (table.players.length === 0) return;          // nobody is seated yet (home screen)
-    const multi = table.players.length > 1;
+    if (S.table.players.length === 0) return;          // nobody is seated yet (home screen)
+    const multi = S.table.players.length > 1;
     setText(ticketLabelEl, multi ? me().name + "'s " + BALLS_PER_GAME + " balls" : "Your " + BALLS_PER_GAME + " balls");
     setText(endBtn, multi ? "Leave table" : "End game");
     updatePlayerStrip();
@@ -2108,8 +2363,8 @@
 
     addPlayerBtn.classList.toggle("hidden", names.length >= MAX_PLAYERS);
     startBtn.textContent = (names.length === 1) ? "Play" : "Start (" + names.length + " players)";
-    setText(startHint, "Everyone starts with " + money(STARTING_BALANCE) + ". A game costs " + money(STAKE) + " for " + BALLS_PER_GAME + " balls." +
-      (names.length > 1 ? " Players take turns, one game each." : ""));
+    setText(startHint, "Everyone starts with " + money(STARTING_BALANCE) + ". Bet " + money(BET_MIN) + " to " + money(BET_MAX) + " a game for " + BALLS_PER_GAME + " balls. The kitty starts at " + money(KITTY_START) + "." +
+      (names.length > 1 ? " Players take turns." : ""));
   }
 
   function renderHome() {
@@ -2125,65 +2380,72 @@
   // ---- The overlay (messages and buttons on top of the board) ----
   // Returns what the overlay should say for the current mode.
   function overlayContent() {
-    if (table.players.length === 0) return null;
+    if (S.table.players.length === 0) return null;
     const who = me();
-    const multi = table.players.length > 1;
+    const multi = S.table.players.length > 1;
 
-    if (gameState === "idle") {
+    if (S.state === "idle") {
+      clampBet(who);
       return {
         title: multi ? who.name + "'s turn" : "Hi " + who.name + "!",
-        lines: ["You have " + money(who.balance), "A game is " + money(STAKE) + " for " + BALLS_PER_GAME + " balls"],
-        primary: "Insert " + money(STAKE),
-        secondary: table.started ? "Leave table" : "Back"
+        lines: ["You have " + money(who.balance), BALLS_PER_GAME + " balls a game. Jackpot: " + money(Math.min(JACKPOT_MULTIPLIER * who.bet, S.table.kitty))],
+        bet: true,
+        primary: "Insert " + money(who.bet),
+        secondary: S.table.started ? "Leave table" : "Back"
       };
     }
-    if (gameState === "result") {
+    if (S.state === "result") {
       const next = nextActiveIndex();
       const othersIn = activePlayers().length > 1;   // is anyone besides this player still playing?
-      // NEW IN 9: a real win keeps the turn. The big button says "Play again" and the phone is NOT passed on.
-      if (keepsTurn) {
+      clampBet(who);
+      const cappedLine = S.lastOutcome.capped ? ["The kitty could only pay " + money(S.lastOutcome.payout) + " of " + money(S.lastOutcome.wanted)] : [];
+      // A real win keeps the turn: the big button says "Play again" and the phone is NOT passed on.
+      if (S.keepsTurn) {
         return {
-          title: lastOutcome.label,
+          title: S.lastOutcome.label,
           lines: [
-            (multi ? who.name + " won " : "You won ") + money(lastOutcome.payout) + "!",
-            (multi ? who.name + " plays again" : "Play again!") + "  (balance " + money(who.balance) + ")"
-          ],
-          primary: "Play again (" + money(STAKE) + ")",
+            (multi ? who.name + " won " : "You won ") + money(S.lastOutcome.payout) + "!"
+          ].concat(cappedLine, [
+            (multi ? who.name + " plays again" : "Play again!") + "  (you have " + money(who.balance) + ")"
+          ]),
+          bet: true,
+          primary: "Play again (" + money(who.bet) + ")",
           secondary: multi ? "Leave table" : "Cash out"
         };
       }
       return {
-        title: lastOutcome.label,
+        title: S.lastOutcome.label,
         lines: [
-          lastOutcome.payout > 0 ? (multi ? who.name + " won " : "You won ") + money(lastOutcome.payout) : "No win this time",
-          "Balance " + money(who.balance)
+          S.lastOutcome.payout > 0 ? (multi ? who.name + " won " : "You won ") + money(S.lastOutcome.payout) : "No win this time",
+          "You have " + money(who.balance)
         ],
-        primary: othersIn ? "Pass to " + table.players[next].name : "Next game (" + money(STAKE) + ")",
+        bet: !othersIn,                              // when the phone passes on, the bet is picked on that player's turn
+        primary: othersIn ? "Pass to " + S.table.players[next].name : "Next game (" + money(who.bet) + ")",
         secondary: multi ? "Leave table" : "Cash out"
       };
     }
-    if (gameState === "gameover") {
-      const lines = [endInfo.line2];
-      if (endInfo.note !== "") {
-        lines.push(endInfo.note);
+    if (S.state === "gameover") {
+      const lines = [S.endInfo.line2];
+      if (S.endInfo.note !== "") {
+        lines.push(S.endInfo.note);
       }
       lines.push("Biggest win: " + money(who.biggestWin));
       let primary = "See scoreboard";
       if (activePlayers().length > 0) {
-        primary = "Pass to " + table.players[nextActiveIndex()].name;
+        primary = "Pass to " + S.table.players[nextActiveIndex()].name;
       } else if (multi) {
-        primary = "Final standings";
+        primary = "Settle up";
       }
-      return { title: endInfo.title, lines: lines, primary: primary, secondary: "" };
+      return { title: S.endInfo.title, lines: lines, primary: primary, secondary: "" };
     }
-    if (gameState === "final") {
-      // Rank everyone by what they finished with. (sort on a copy, so the seating order is not disturbed)
-      const ranked = table.players.slice().sort(function (a, b) { return b.balance - a.balance; });
-      const lines = ranked.map(function (p, i) {
-        return (i === 0 ? "\u2605 " : (i + 1) + ". ") + p.name + "  " + money(p.balance) +
-               "  (" + signed(p.balance - STARTING_BALANCE) + ")";
+    if (S.state === "final") {
+      // THE SETTLE-UP, worked out by the rulebook (Rules.settle). Each player takes home their stack plus an equal share of the kitty.
+      const st = Rules.settle(S);
+      const lines = st.rows.map(function (row, i) {
+        return (i === 0 ? "\u2605 " : (i + 1) + ". ") + row.name + "  " + money(row.takeHome) + "  (" + signed(row.net) + ")";
       });
-      return { title: "Final standings", lines: lines, primary: "See scoreboard", secondary: "" };
+      lines.push("Kitty left " + money(st.kitty) + ", shared " + money(st.share) + " each");
+      return { title: "Settle up", lines: lines, primary: "See scoreboard", secondary: "" };
     }
     return null;   // while playing there is no overlay
   }
@@ -2202,6 +2464,9 @@
       div.textContent = line;
       ovLines.appendChild(div);
     }
+    betRowEl.classList.toggle("hidden", !content.bet);
+    betLabelEl.classList.toggle("hidden", !content.bet);
+    if (content.bet) { betValEl.textContent = money(me().bet); }
     ovPrimary.textContent = content.primary;
     ovSecondary.textContent = content.secondary;
     ovSecondary.classList.toggle("hidden", content.secondary === "");
@@ -2209,24 +2474,24 @@
 
   // What the big button and the small button on the overlay do, depending on the mode.
   function primaryAction() {
-    if (gameState === "idle") {
+    if (S.state === "idle") {
       startGame();
-    } else if (gameState === "result") {
+    } else if (S.state === "result") {
       // NEW IN 9: a winner plays again. Otherwise: others still in? Pass the phone. If not, this player just keeps going.
-      if (keepsTurn) startGame();
+      if (S.keepsTurn) startGame();
       else if (activePlayers().length > 1) advanceTurn();
       else startGame();
-    } else if (gameState === "gameover") {
+    } else if (S.state === "gameover") {
       if (activePlayers().length > 0) advanceTurn();
-      else if (table.players.length > 1) showFinal();
+      else if (S.table.players.length > 1) showFinal();
       else goHome();
-    } else if (gameState === "final") {
+    } else if (S.state === "final") {
       goHome();
     }
   }
   function secondaryAction() {
     // "Back" (before anyone has played) and "Leave table" / "Cash out" are all handled by endGameEarly.
-    if (gameState === "idle" || gameState === "result") endGameEarly();
+    if (S.state === "idle" || S.state === "result") endGameEarly();
   }
 
   // ---- The pay table (built from the payout settings, so it can never be out of date) ----
@@ -2246,26 +2511,28 @@
       }
       return out;
     }
-    let html = "<table>";
+    // Shown for the bet the current player has chosen (or $1 on the home screen).
+    const bet = (S.state === "home" || S.table.players.length === 0) ? 1 : me().bet;
+    const kitty = (S.state === "home" || S.table.players.length === 0) ? KITTY_START : S.table.kitty;
+    let html = "<div class='hint' style='margin:0 0 6px'>Prizes for a " + money(bet) + " bet. Bet " + money(BET_MIN) + " to " + money(BET_MAX) + ": prizes grow with your bet.</div><table>";
 
     html = html + heading("Three of a kind");
     for (const fruit in PAYOUT_THREE) {
-      html = html + row(pics(fruit, 3), money(PAYOUT_THREE[fruit]));
+      html = html + row(pics(fruit, 3), money(PAYOUT_THREE[fruit] * bet));
     }
-    html = html + row(pics("Bell", 3), "JACKPOT " + money(store.pot));
-    html = html + row(pics("Star", 3), money(PAYOUT_THREE_STARS));
-
-    html = html + heading("With a wild card " + fruitImgTag("Star", 22));
+    html = html + heading("Two alike + a wild card " + fruitImgTag("Star", 22));
     for (const fruit in PAYOUT_WITH_STAR) {
-      html = html + row(pics("Star", 1) + pics(fruit, 2), money(PAYOUT_WITH_STAR[fruit]));
+      html = html + row(pics("Star", 1) + pics(fruit, 2), money(PAYOUT_WITH_STAR[fruit] * bet));
     }
-
-    html = html + heading("Consolation");
-    html = html + row(pics(CONSOLATION_FRUIT, 2) + " <span class='plain'>+ anything else</span>", money(PAYOUT_CONSOLATION));
+    html = html + heading("Two wild cards + a fruit");
+    for (const fruit in PAYOUT_TWO_STARS) {
+      html = html + row(pics("Star", 2) + pics(fruit, 1), money(PAYOUT_TWO_STARS[fruit] * bet));
+    }
+    html = html + heading("JACKPOT");
+    html = html + row(pics("Star", 3), money(Math.min(JACKPOT_MULTIPLIER * bet, kitty)));
 
     html = html + "</table>";
-    // NEW IN 9: the new rule, in words (built from the setting so it can never be out of date)
-    html = html + "<div class='hint' style='margin-top:12px'>Win " + money(KEEP_TURN_MIN_PAYOUT) + " or more and you play again!</div>";
+    html = html + "<div class='hint' style='margin-top:12px'>The jackpot is " + JACKPOT_MULTIPLIER + " x your bet, or whatever is left in the kitty if that is less. Win and you play again!</div>";
     document.getElementById("payTable").innerHTML = html;
   }
 
@@ -2286,9 +2553,9 @@
     let label;
     if (charging) {
       label = "Release!";
-    } else if (gameState === "playing" && ballIsRolling()) {
+    } else if (S.state === "playing" && ballIsRolling()) {
       label = "Ball rolling...";
-    } else if (gameState === "playing") {
+    } else if (S.state === "playing") {
       label = "Hold to pull";
     } else {
       label = "Insert coin to play";
@@ -2298,8 +2565,20 @@
     pullBtn.classList.toggle("charging", charging);          // NEW IN 8: the button sinks while you hold it
 
     // The reshuffle button is only usable between balls, once per ball.
-    const canReshuffle = (gameState === "playing" && !ballIsRolling() && !reshuffleUsed);
+    const canReshuffle = (S.state === "playing" && !ballIsRolling() && !reshuffleUsed);
     reshuffleBtn.classList.toggle("disabled", !canReshuffle);
+
+    // NEW IN 10: the Tilt button. It shows how many games to wait when it is not ready.
+    const wait = (S.table.players.length > 0 && S.state !== "home") ? me().tiltWait : 0;
+    setText(tiltBtn, wait > 0 ? "Tilt in " + wait : "Tilt");
+    tiltBtn.classList.toggle("disabled", !canTilt());
+
+    // NEW IN 10: the opening hint fades out in its last second.
+    if (hintFrames > 0 && resultText === HINT_TEXT) {
+      statusEl.style.opacity = hintFrames < 60 ? String(hintFrames / 60) : "1";
+    } else {
+      statusEl.style.opacity = "1";
+    }
 
     setText(statusEl, resultText);
   }
@@ -2345,11 +2624,46 @@
   ovPrimary.addEventListener("click", primaryAction);
   ovSecondary.addEventListener("click", secondaryAction);
   reshuffleBtn.addEventListener("click", tryReshuffle);
+  tiltBtn.addEventListener("click", tryTilt);
+
+  // NEW IN 10: the bet picker. It only exists on the overlay, which only shows between games: you can't change a bet mid-game.
+  function changeBet(step) {
+    if (Rules.changeBet(S, step)) { renderOverlay(); }
+  }
+  document.getElementById("betDown").addEventListener("click", function () { changeBet(-1); });
+  document.getElementById("betUp").addEventListener("click", function () { changeBet(+1); });
+
+  // NEW IN 10: HOW TO PLAY. Built from the settings so it can never disagree with the real rules.
+  function buildHowToPlay() {
+    const star = fruitImgTag("Star", 20);
+    document.getElementById("howText").innerHTML =
+      "<h3>The idea</h3>" +
+      "<p>Pull the spring back, let go, and the ball drops through the pegs into a cup. Each game is " + BALLS_PER_GAME + " balls. Match the fruit to win!</p>" +
+      "<h3>Betting</h3>" +
+      "<p>Before each game pick a bet from " + money(BET_MIN) + " to " + money(BET_MAX) + " with the + and - buttons. Prizes are multiplied by your bet. Your bet is remembered for your next turn.</p>" +
+      "<h3>The kitty</h3>" +
+      "<p>Bets go into a shared kitty (it starts at " + money(KITTY_START) + ") and prizes are paid from it, like a poker pot. If the kitty runs low, prizes shrink to what is left. If you can't afford the smallest bet you are out.</p>" +
+      "<h3>Winning</h3><ul>" +
+      "<li>Three of a kind pays the most for the fruit.</li>" +
+      "<li>A wild card " + star + " counts as any fruit: two alike + a " + star + " pays a bit less.</li>" +
+      "<li>Two " + star + " and a fruit pays a little too.</li>" +
+      "<li>Three " + star + " is the JACKPOT: " + JACKPOT_MULTIPLIER + " x your bet (or the whole kitty if it is smaller).</li>" +
+      "<li>The Bell pays the most of the fruits. Narrow cups (the Bell and the " + star + ") are harder to hit.</li></ul>" +
+      "<p>Win and you play again. Lose and the turn passes on.</p>" +
+      "<h3>Tilt</h3>" +
+      "<p>Tap Tilt while the ball is rolling to nudge it sideways. You can't choose which way or how hard! You can use it once every " + TILT_EVERY_GAMES + " of your games.</p>" +
+      "<h3>Tips</h3><ul><li>Hint: aim for the " + star + "</li><li>The Shuffle cups button (in the menu) rearranges the cups between balls, once per ball.</li></ul>";
+  }
+  function openHow()  { buildHowToPlay(); howModal.classList.remove("hidden"); }
+  function closeHow() { howModal.classList.add("hidden"); }
+  document.getElementById("howBtn").addEventListener("click", openHow);
+  document.getElementById("howBtnHome").addEventListener("click", openHow);
+  document.getElementById("howClose").addEventListener("click", closeHow);
 
   endBtn.addEventListener("click", function () {
     // Ending in the middle of a game loses the stake, so ask first (a thumb can slip).
-    if (gameState === "playing") {
-      const leaving = (table.players.length > 1) ? "Leave the table now?" : "End now?";
+    if (S.state === "playing") {
+      const leaving = (S.table.players.length > 1) ? "Leave the table now?" : "End now?";
       if (!window.confirm(leaving + " The game in progress will be forfeited.")) {
         return;
       }
@@ -2358,8 +2672,8 @@
   });
 
   document.getElementById("resetBtn").addEventListener("click", function () {
-    if (window.confirm("Clear the scoreboard and reset the jackpot to " + money(JACKPOT_START) + "?")) {
-      store = { pot: JACKPOT_START, lastName: "", lastNames: [], players: {} };
+    if (window.confirm("Clear the scoreboard?")) {
+      store = { lastName: "", lastNames: [], players: {} };
       saveStore();
       renderHome();
     }
@@ -2399,8 +2713,8 @@
     // On the home screen the only key that matters is ENTER. We leave all other keys
     // alone so the name boxes work normally (including the space bar).
     // NEW IN 6: ENTER in a name box jumps to the next box. ENTER in the last box starts the game.
-    if (gameState === "home") {
-      if (event.key === "Enter" && !event.repeat && payModal.classList.contains("hidden")) {
+    if (S.state === "home") {
+      if (event.key === "Enter" && !event.repeat && payModal.classList.contains("hidden") && howModal.classList.contains("hidden")) {
         const boxes = Array.from(nameRowsEl.querySelectorAll("input"));
         const at = boxes.indexOf(event.target);
         if (at >= 0 && at < boxes.length - 1) {
@@ -2421,6 +2735,9 @@
     if (event.code === "KeyR" && !event.repeat) {
       tryReshuffle();
     }
+    if (event.code === "KeyT" && !event.repeat) {
+      tryTilt();
+    }
     if (event.key === "Enter" && !event.repeat) {
       primaryAction();
     }
@@ -2429,6 +2746,8 @@
       // to hit by accident when the phone is being passed around. Use the on-screen button to leave.
       if (!payModal.classList.contains("hidden")) {
         closePayTable();
+      } else if (!howModal.classList.contains("hidden")) {
+        closeHow();
       } else if (!menuSheet.classList.contains("hidden")) {
         closeMenu();
       }
@@ -2436,7 +2755,7 @@
   });
 
   document.addEventListener("keyup", function (event) {
-    if (event.code === "Space" && gameState !== "home") {
+    if (event.code === "Space" && S.state !== "home") {
       event.preventDefault();
       releasePull();
     }
@@ -2567,10 +2886,10 @@
       const x = cups[i].left;
       pen.fillStyle = COLOUR_TRAY;
       pen.fillRect(x - DIVIDER_WIDTH / 2 - 1, top, DIVIDER_WIDTH + 2, CUP_HEIGHT);
-      drawCircle(pen, x, top, DIVIDER_WIDTH + 1.5, COLOUR_TRAY);
+      drawCircle(pen, x, top, DIVIDER_WIDTH / 2 + 1.5, COLOUR_TRAY);
       pen.fillStyle = "#ffffff";
       pen.fillRect(x - DIVIDER_WIDTH / 2 + 0.5, top, DIVIDER_WIDTH - 1, CUP_HEIGHT);
-      drawCircle(pen, x, top, DIVIDER_WIDTH - 0.5, "#ffffff");
+      drawCircle(pen, x, top, DIVIDER_WIDTH / 2 - 0.5, "#ffffff");
     }
 
     // The fruit pictures are drawn LAST so the dividers cannot cut through them.
@@ -2665,36 +2984,94 @@
   // ============================================================
   // 14. THE GAME LOOP
   // ============================================================
-  function gameLoop() {
+  // ANALOGY: the screen is a projector that may click 30, 60 or 120 times a
+  // second. We don't want the film to play in slow motion when the projector
+  // is slow, so we use a CLOCK. Each click we ask "how much real time has
+  // passed?" and play exactly that much game time, in equal 1/60 s slices.
+  // Drawing still happens once per click.
+  // CHANGED IN 14a: GAME SPEED. The first versions took one step per screen refresh, so a 144 Hz laptop ran the game 2.4 times faster
+  // than a 60 Hz phone. The speed you liked was the laptop's, so the game now runs at GAME_SPEED times the "normal" speed on EVERY device.
+  // To change it, open the page with ?speed=2 (slower) or ?speed=3 (faster). Open it with ?fps to see your screen's refresh rate:
+  // the old laptop speed was (refresh rate / 60), e.g. 144 Hz gives 2.4.
+  const GAME_SPEED = (function () {
+    const found = location.search.match(/[?&]speed=([0-9.]+)/);
+    const asked = found ? parseFloat(found[1]) : NaN;
+    return (asked >= 0.3 && asked <= 6) ? asked : 2.4;
+  })();
+  const STEPS_PER_SECOND  = 60 * GAME_SPEED;   // physics steps per REAL second
+  const MAX_CATCHUP_STEPS = 12;  // if a phone stalls, never try to catch up more than this many steps at once
+  const STEP_MS = 1000 / STEPS_PER_SECOND;     // real time one step lasts
+  const SIM_STEP_MS = 1000 / 60;               // how much GAME time one physics step covers (always 1/60 s, so the physics behaves the same)
+  let lastFrameTime = 0;         // when the previous screen refresh happened (ms)
+  let stepBank = 0;              // leftover real time (ms) not yet turned into a game step
+  let fpsFrames = 0, fpsStart = 0;
+  const SHOW_FPS = location.search.indexOf("fps") !== -1;   // open the page with ?fps on the end to see the numbers
+
+  // One slice of game time: the old loop body, minus the drawing.
+  function stepGame() {
+    if (hintFrames > 0) {
+      hintFrames = hintFrames - 1;
+      if (hintFrames === 0 && resultText === HINT_TEXT) { resultText = "Hold the pull button for ball 1"; }
+    }
+    if (charging) {
+      power = power + 1 / (CHARGE_SECONDS * 60);        // game time, so the meter speeds up with the game exactly as everything else
+      if (power >= 1) {
+        power = power - 1;               // loop back to the start instead of sticking at the end
+      }
+      soundWhileCharging();
+    }
+    Engine.update(engine, SIM_STEP_MS);
+    checkLanding();
+    clearLandedBall();
+    rescueIfStuck();
+    if (overlayDelay > 0) {
+      overlayDelay = overlayDelay - 1;
+      if (overlayDelay === 0) {
+        renderOverlay();
+        playOutcomeSound();
+        setCelebrate(S.outcomeKind !== "none" && S.outcomeKind !== "consolation");
+      }
+    }
+  }
+
+  function gameLoop(now) {
+    const t = now || performance.now();
     // On the home screen nothing is moving, so we skip the physics and drawing.
-    if (gameState !== "home") {
-      if (charging) {
-        power = power + 1 / (CHARGE_SECONDS * 60);
-        if (power >= 1) {
-          power = power - 1;             // NEW IN 9: loop back to the start instead of sticking at the end
-        }
-        soundWhileCharging();            // CHANGED IN 9: one scale note per notch while winding up
+    if (S.state !== "home") {
+      if (!lastFrameTime) { lastFrameTime = t; }
+      stepBank = stepBank + Math.min(t - lastFrameTime, 100);   // clamp: a long pause (tab hidden) must not cause a huge jump
+      lastFrameTime = t;
+      let steps = 0;
+      while (stepBank >= STEP_MS && steps < MAX_CATCHUP_STEPS) {
+        stepGame();
+        stepBank = stepBank - STEP_MS;
+        steps = steps + 1;
       }
-
-      Engine.update(engine, 1000 / 60);
-      checkLanding();
-      clearLandedBall();
-      rescueIfStuck();
-
-      // After a game ends, wait a moment before the overlay appears.
-      if (overlayDelay > 0) {
-        overlayDelay = overlayDelay - 1;
-        if (overlayDelay === 0) {
-          renderOverlay();
-          playOutcomeSound();            // NEW IN 7: the win or lose jingle, as the result card appears
-          setCelebrate(outcomeKind !== "none" && outcomeKind !== "consolation");   // CHANGED IN 9: the frame gives one happy bounce on a real win
-        }
-      }
-
+      if (steps === MAX_CATCHUP_STEPS) { stepBank = 0; }        // give up catching up rather than spiral
       draw();
       refreshControls();
+      if (SHOW_FPS) { showFps(t); }
+    } else {
+      lastFrameTime = 0; stepBank = 0;
     }
     requestAnimationFrame(gameLoop);
+  }
+
+  // Tiny on-screen readout, only when the address ends in ?fps
+  function showFps(t) {
+    fpsFrames = fpsFrames + 1;
+    if (!fpsStart) { fpsStart = t; }
+    if (t - fpsStart >= 1000) {
+      const fps = Math.round(fpsFrames * 1000 / (t - fpsStart));
+      fpsFrames = 0; fpsStart = t;
+      let el = document.getElementById("fpsBox");
+      if (!el) {
+        el = document.createElement("div"); el.id = "fpsBox";
+        el.style.cssText = "position:fixed;left:4px;top:4px;z-index:99999;background:#000c;color:#0f0;font:12px monospace;padding:3px 6px;border-radius:6px;pointer-events:none";
+        document.body.appendChild(el);
+      }
+      el.textContent = fps + " screen refreshes per second";
+    }
   }
 
   // Get everything ready and start.
