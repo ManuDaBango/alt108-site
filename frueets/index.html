@@ -381,7 +381,7 @@
     @keyframes pop { 0% { transform: scale(0.4); } 65% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
     /* The board takes whatever height is left over. Inside it sits the FRAME, which JavaScript (fitBoard) sizes to
-       exactly the same shape as the board picture (400 wide : 650 tall), so the frame hugs the board at any screen size. */
+       exactly the same shape as the board picture (450 wide : 650 tall), so the frame hugs the board at any screen size. */
     #boardArea {
       flex: 1;
       min-height: 0;                  /* lets the box shrink on small phones */
@@ -397,7 +397,7 @@
     #boardWrap {
       position: relative;
       box-sizing: content-box;        /* width and height set by fitBoard measure the picture only. The border is extra. */
-      aspect-ratio: 400 / 650;        /* a sensible shape even before JavaScript runs */
+      aspect-ratio: 450 / 650;        /* a sensible shape even before JavaScript runs */
       max-width: 100%;
       max-height: 100%;
       border: 6px solid #fff;
@@ -640,7 +640,7 @@
 
     <div id="boardArea">
     <div id="boardWrap">
-      <canvas id="board" width="400" height="650"></canvas>
+      <canvas id="board" width="450" height="650"></canvas>
 
       <!-- NEW IN 9: the message line now floats over the top of the board -->
       <div id="status"></div>
@@ -1178,14 +1178,14 @@
   // ============================================================
   // 1. SETTINGS - the numbers you can change to experiment
   // ============================================================
-  const BOARD_WIDTH   = 400;
+  const BOARD_WIDTH   = 450;    // CHANGED IN 15: 400 -> 450, a wider board (room for a 14th cup, a second Star). Keep this the same in server/board.js
   const BOARD_HEIGHT  = 640;    // height of the peg and cup area
   const RENDER_SCALE  = 2;      // NEW IN 8: the board is drawn with this many pixels for every one it is "worth", so it stays crisp on phone screens. 1 = blurry but lightest.
   const CANVAS_HEIGHT = 650;    // CHANGED IN 5: the message line and power bar moved out of the canvas into the page
 
   // --- Pegs ---
   const PEG_RADIUS      = 6;
-  const PEG_ROWS        = 5;
+  const PEG_ROWS        = 4;    // CHANGED IN 15: 5 -> 4 (the bottom row is gone, so the ball is less knocked about. Fewer rows = easier to aim)
   const PEG_SPACING     = 50;
   const FIRST_PEG_ROW_Y = 120;
   const PEG_ROW_GAP     = 45;
@@ -1281,7 +1281,7 @@
     { fruit: "Peach",     count: 3, width: 34 },
     { fruit: "Pineapple", count: 2, width: 34 },
     { fruit: "Lemon",     count: 2, width: 34 },
-    { fruit: "Star",      count: 1, width: 30 },
+    { fruit: "Star",      count: 2, width: 30 },   // CHANGED IN 15: 1 -> 2 Stars (14 cups)
     { fruit: "Bell",      count: 2, width: 28 }
   ];
 
@@ -1507,6 +1507,7 @@
   let charging      = false;
   let power         = 0;
   let ball          = null;
+  let lastDropX     = null;    // NEW IN 15: where YOUR last ball was dropped, so you can try to drop the next one in the same place
   let ballLanded    = false;
   let reshuffleUsed = false;
   let resultText    = "";
@@ -1558,6 +1559,7 @@
     saveStore();
 
     S = Rules.newSession(typed);                     // the rulebook seats the players (fixing empty and repeated names)
+    lastDropX = null;                                // NEW IN 15
 
     charging = false;
     power = 0;
@@ -1707,6 +1709,7 @@
   function releasePull() {
     if (charging) {
       charging = false;
+      lastDropX = powerToX(power);        // NEW IN 15: remember the spot (before power is reset below)
       if (online) {
         sendOnline({ type: "release", power: power });   // NEW IN 14a: we only say HOW FAR; the server drops the ball (and everyone hears the twang)
       } else {
@@ -3219,6 +3222,31 @@
       stamp(ballSprite, bp.x, bp.y);
     }
 
+    // NEW IN 15: a pale marker where your LAST ball started. Line the gold arrow up with it to drop the next ball in the same place.
+    if (lastDropX !== null && (charging || canFire())) {
+      ctx.save();
+      ctx.setLineDash([3, 6]);
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+      ctx.beginPath();
+      ctx.moveTo(lastDropX, 30);
+      ctx.lineTo(lastDropX, 70);
+      ctx.stroke();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.moveTo(lastDropX - 8, 8);
+      ctx.lineTo(lastDropX + 8, 8);
+      ctx.lineTo(lastDropX, 26);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(60, 20, 140, 0.7)";
+      ctx.stroke();
+    }
+
     // While charging, a gold arrow at the top shows where the ball will start.
     if (charging) {
       const x = powerToX(power);
@@ -3250,7 +3278,7 @@
     const found = location.search.match(/[?&]server=([^&]+)/);
     return found ? decodeURIComponent(found[1]) : "wss://game-of-frueets-server.onrender.com";
   })();
-  const EXPECTED_SERVER = "14c";                         // the server version this page was written for (see SERVER_VERSION in server.js)
+  const EXPECTED_SERVER = "15";                         // the server version this page was written for (see SERVER_VERSION in server.js)
   const ROOM_KEY = "frueets-room";                       // remembered in this browser so a refresh puts you back in your room
 
   function isMyTurn() {
@@ -3366,6 +3394,7 @@
     }
     const before = S.state;
     const firstTime = !mine.started;
+    if (firstTime) { lastDropX = null; }             // NEW IN 15
     mine.started = true;
     setSocialVisible(true);                                // NEW IN 14c: chat and reaction buttons appear once the game starts
     S = m.session;
