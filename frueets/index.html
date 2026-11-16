@@ -558,6 +558,11 @@
     #settleCard .pay { font-size: 17px; margin-bottom: 4px; }
     #settleCard .ovHead { font-size: 14px; color: var(--ink-soft); margin-top: 12px; }
     #settleCard button { margin-top: 12px; width: 100%; }
+    /* NEW IN 17: the ring of bulbs just inside the frame. Pale when off; a chase of bright, glowing bulbs when somebody wins. */
+    #lights { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+    .bulb { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.50); box-shadow: 0 0 0 1px rgba(110, 80, 210, 0.30); transition: background 0.07s, box-shadow 0.07s, transform 0.07s; }
+    .bulb.on { background: #fff6a0; transform: scale(1.7); box-shadow: 0 0 6px 3px #ffd23f, 0 0 18px 7px rgba(255, 170, 20, 0.85); }
   </style>
 </head>
 <body>
@@ -655,6 +660,7 @@
     <div id="boardArea">
     <div id="boardWrap">
       <canvas id="board" width="450" height="650"></canvas>
+      <div id="lights" aria-hidden="true"></div>
 
       <!-- NEW IN 9: the message line now floats over the top of the board -->
       <div id="status"></div>
@@ -2102,6 +2108,36 @@
     pop(820, 0.07);
   }
 
+  // ---- NEW IN 17: MORE SOUNDS ----
+  // A shower of coins: lots of tiny high "clinks" at random pitches. The bigger the prize, the longer and denser the shower.
+  function soundCoinShower(amount) {
+    if (!soundReady()) return;
+    const count = Math.max(5, Math.min(40, Math.round(amount * 1.5 + 5)));
+    const gap = Math.min(0.09, 2.2 / count);
+    for (let i = 0; i < count; i++) {
+      const delay = 0.35 + i * gap + Math.random() * 0.03;
+      tone(1700 + Math.random() * 1000, 0.09, { type: "triangle", volume: 0.06, delay: delay, echo: 0.1 });
+      tone(3400 + Math.random() * 1200, 0.05, { type: "sine", volume: 0.025, delay: delay + 0.012 });
+    }
+  }
+  // One quiet "tick" for the lights chasing round the frame.
+  function soundLightTick() {
+    tone(1500, 0.03, { type: "triangle", volume: 0.035 });
+  }
+  // Your turn has come round (online): three rising bell notes.
+  function soundYourTurn() {
+    if (!soundReady()) return;
+    glock(noteHz(12), 0.5, 0.16, 0);
+    glock(noteHz(15), 0.5, 0.16, 0.11);
+    glock(noteHz(19), 0.9, 0.18, 0.22);
+  }
+  // The last five seconds of your turn: a tick that gets a little higher each second.
+  let countdownLast = -1;
+  function soundCountdownTick(secondsLeft) {
+    if (!soundReady()) return;
+    tone(600 + (5 - secondsLeft) * 120, 0.07, { type: "sine", volume: 0.14, echo: 0.05 });
+  }
+
   // ---- The end-of-game jingles ----
   // S.outcomeKind is set by finishGame. We play the jingle at the moment the result card appears.
   function playOutcomeSound() {
@@ -2135,6 +2171,8 @@
       tone(392, 0.30, { type: "sine", endFreq: 330, volume: 0.22, echo: 0.2 });
       tone(330, 0.55, { type: "sine", endFreq: 233, volume: 0.22, delay: 0.26, echo: 0.2 });
     }
+
+    if (S.lastOutcome && S.lastOutcome.payout > 0) { soundCoinShower(S.lastOutcome.payout); }     // NEW IN 17
 
     // Winning a real prize earns another turn: a cheerful rising "whoosh-ding" says so.
     if (S.keepsTurn) {
@@ -2305,9 +2343,75 @@
     new ResizeObserver(fitBoard).observe(document.getElementById("boardArea"));
   }
 
-  // CHANGED IN 9: after a win the frame gives one happy bounce (the CSS class 'celebrate'). No more flashing bulbs.
+  // ---- NEW IN 17: THE LIGHTS ----
+  // ANALOGY: the old marquee signs on a cinema. The bulbs are numbered 0, 1, 2 ... going CLOCKWISE round the frame (along the top to the right,
+  // down the right side, back along the bottom, up the left side). To make the lights "run", every few hundredths of a second we shift
+  // the pattern one bulb along: bulb number i is lit when (i - step) is a multiple of GAP. As step goes up, the lit bulbs move to
+  // higher numbers = clockwise.
+  const LIGHT_COUNT = 52;
+  const LIGHT_SHOWS = {            // ms = time between steps, secs = how long it runs, gap = a bulb is lit every 'gap' bulbs
+    small:   { ms: 85, secs: 3.0, gap: 4 },
+    big:     { ms: 62, secs: 4.5, gap: 3 },
+    jackpot: { ms: 48, secs: 7.0, gap: 3 }
+  };
+  const lightEls = [];
+  (function buildLights() {
+    const layer = document.getElementById("lights");
+    const inset = 8, w = BOARD_WIDTH - 2 * inset, h = BOARD_HEIGHT + 10 - 2 * inset, perimeter = 2 * (w + h);
+    for (let i = 0; i < LIGHT_COUNT; i++) {
+      const d = i * perimeter / LIGHT_COUNT;
+      let x, y;
+      if (d < w)                { x = inset + d;                 y = inset; }                 // along the top, left to right
+      else if (d < w + h)       { x = BOARD_WIDTH - inset;       y = inset + (d - w); }       // down the right side
+      else if (d < 2 * w + h)   { x = BOARD_WIDTH - inset - (d - w - h); y = BOARD_HEIGHT + 10 - inset; }   // along the bottom, right to left
+      else                      { x = inset;                     y = BOARD_HEIGHT + 10 - inset - (d - 2 * w - h); }   // up the left side
+      const bulb = document.createElement("div");
+      bulb.className = "bulb";
+      bulb.style.left = (x / BOARD_WIDTH * 100) + "%";
+      bulb.style.top  = (y / CANVAS_HEIGHT * 100) + "%";
+      layer.appendChild(bulb);
+      lightEls.push(bulb);
+    }
+  })();
+  let lightsTimer = null;
+  function setAllLights(on) { for (let i = 0; i < lightEls.length; i++) { lightEls[i].classList.toggle("on", on); } }
+  function stopLights() {
+    if (lightsTimer !== null) { clearInterval(lightsTimer); lightsTimer = null; }
+    setAllLights(false);
+  }
+  function startLights(kind) {
+    stopLights();
+    const show = LIGHT_SHOWS[kind];
+    if (!show) { return; }
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {      // gentle version: steady glow, no blinking
+      setAllLights(true);
+      lightsTimer = setInterval(stopLights, 1800);
+      return;
+    }
+    const startedAt = Date.now();
+    let step = 0;
+    const tick = function () {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      if (elapsed >= show.secs) { stopLights(); return; }
+      if (kind === "jackpot" && elapsed > show.secs - 1.6) {                 // the jackpot finishes with everything flashing
+        setAllLights(Math.floor(elapsed * 6) % 2 === 0);
+        return;
+      }
+      step++;
+      for (let i = 0; i < lightEls.length; i++) {
+        lightEls[i].classList.toggle("on", (((i - step) % show.gap) + show.gap) % show.gap === 0);
+      }
+      if (step % 2 === 0) { soundLightTick(); }
+    };
+    tick();                                  // light the first bulbs straight away, then keep stepping
+    lightsTimer = setInterval(tick, show.ms);
+  }
+
+  // CHANGED IN 9: after a win the frame gives one happy bounce (the CSS class 'celebrate').
+  // CHANGED IN 17: and the lights run round the frame (S.outcomeKind says how big the win was). Turning it off stops the lights.
   function setCelebrate(on) {
     document.getElementById("boardWrap").classList.toggle("celebrate", on);
+    if (on) { startLights(S.outcomeKind); } else { stopLights(); }
   }
 
   // Only change an element's text if it is different. This keeps things smooth, because we call it 60 times a second.
@@ -3523,6 +3627,9 @@
       overlayEl.classList.add("hidden");
     }
     if (S.state === "final" && before !== "final") { soundFanfare(); }
+    const myTurnNow = isMyTurn() && S.state !== "final" && S.state !== "gameover";       // NEW IN 17: a chime when it becomes your turn
+    if (myTurnNow && !mine.wasMyTurn && !firstTime) { soundYourTurn(); }
+    mine.wasMyTurn = myTurnNow;
     updateUi();
     updateNotice();
   }
@@ -3543,7 +3650,8 @@
     } else if (e.name === "pass") {
       setCelebrate(false); soundPass();
     } else if (e.name === "cashout") {
-      resultText = e.player + " cashed out with " + money(e.takeHome); soundPass();
+      resultText = e.player + " cashed out with " + money(e.takeHome);
+      if (e.player === online.name) { soundCoinShower(Math.max(6, e.takeHome / 2)); } else { soundPass(); }     // NEW IN 17: you hear your own coins
     } else if (e.name === "topup") {
       resultText = e.player + " got " + money(e.amount) + " more"; soundCoinInsert();
     } else if (e.name === "topupAsked") {
@@ -3757,6 +3865,8 @@
     if (left > 20 || left < 0) { pill.classList.add("hidden"); return; }
     pill.textContent = (isMyTurn() ? "Your turn" : me().name) + ": " + left + "s";
     pill.classList.toggle("late", left <= 10);
+    if (left <= 5 && left >= 1 && left !== countdownLast && isMyTurn()) { countdownLast = left; soundCountdownTick(left); }     // NEW IN 17
+    if (left > 5) { countdownLast = -1; }
     pill.classList.remove("hidden");
   }, 250);
 
