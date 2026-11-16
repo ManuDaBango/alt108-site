@@ -546,6 +546,18 @@
     #howCard h3 { font-family: var(--display); font-weight: 400; font-size: 18px; color: #f0357f; margin: 12px 0 4px; }
     #howCard p, #howCard li { font-size: 16px; line-height: 1.4; margin: 3px 0; }
     #howCard ul { padding-left: 20px; margin: 4px 0; }
+    #ovLines .ovHead { font-size: 14px; font-weight: 800; color: var(--ink-soft); margin-top: 12px; }
+    #ovLines .ovBal, #settleCard .ovBal { display: flex; justify-content: space-between; gap: 10px; font-size: 16px; font-weight: 800; margin-bottom: 3px; }
+    #lastSettleCard { text-align: center; }
+    #lastSettleCard button { width: 100%; }
+    #settleModal { position: fixed; inset: 0; background: rgba(30, 10, 80, 0.55); z-index: 50; display: flex; align-items: center; justify-content: center; }
+    #settleModal.hidden { display: none; }
+    #settleCard { background: #fff; border-radius: 20px; padding: 18px; width: min(88vw, 360px); max-height: 90vh; overflow-y: auto; font-weight: 800; color: var(--ink); }
+    #settleCard h3 { margin: 0 0 2px 0; font-family: var(--display); font-weight: 400; font-size: 24px; color: #f0357f; text-align: center; }
+    #settleCard .when { text-align: center; font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; }
+    #settleCard .pay { font-size: 17px; margin-bottom: 4px; }
+    #settleCard .ovHead { font-size: 14px; color: var(--ink-soft); margin-top: 12px; }
+    #settleCard button { margin-top: 12px; width: 100%; }
   </style>
 </head>
 <body>
@@ -594,6 +606,8 @@
       <h2>Last 3 games</h2>
       <div id="scoreboard"></div>
     </div>
+
+    <div class="card hidden" id="lastSettleCard"><button id="lastSettleBtn" class="secondary"></button></div>
 
     <div class="linkRow">
       <button id="howBtnHome" class="link">How to play</button>
@@ -688,6 +702,9 @@
       <div id="chatForm"><input id="chatInput" maxlength="140" autocomplete="off" placeholder="Say something"><button id="chatSend" class="secondary">Send</button></div>
     </div>
   </div>
+
+  <!-- NEW IN 16: the last settle-up, opened again from the start page -->
+  <div id="settleModal" class="hidden"><div id="settleCard"></div></div>
 
   <!-- NEW IN 14b: the host adds money for a player -->
   <div id="topupModal" class="hidden">
@@ -2361,7 +2378,7 @@
 
   // CHANGED IN 10: the pile is the KITTY. On the home screen (no game yet) it shows the opening kitty.
   function updatePots() {
-    const kitty = (S.state === "home") ? KITTY_START : S.table.kitty;
+    const kitty = (S.state === "home") ? KITTY_START : (gameIsOver() ? totalPutIn() : S.table.kitty);   // CHANGED IN 16
     drawPotPile(document.getElementById("potBig"), kitty);
     drawPotPile(document.getElementById("potMini"), kitty);
     setText(document.getElementById("potBigAmount"), money(kitty));
@@ -2451,7 +2468,12 @@
   function updatePlayerStrip() {
     const chips = playersEl.children;
     const kittyChip = document.getElementById("kittyChip");
-    if (kittyChip) { setText(kittyChip.children[1], money(S.table.kitty)); }
+    const finished = gameIsOver();
+    const finalRows = finished ? Rules.settle(S).rows : [];
+    if (kittyChip) {
+      setText(kittyChip.children[0], finished ? "Shared" : "Kitty");                           // NEW IN 16: at the end the pot has been shared out
+      setText(kittyChip.children[1], money(finished ? totalPutIn() : S.table.kitty));
+    }
     for (let i = 0; i < S.table.players.length && i < chips.length; i++) {
       const p = S.table.players[i];
       const isTurn = (i === S.table.current && p.active && S.state !== "final");
@@ -2460,9 +2482,15 @@
         chips[i].className = wanted;
       }
       setText(chips[i].children[0], p.name);
-      setText(chips[i].children[1], money(p.balance));
+      // NEW IN 16: once the game is over (or a player has cashed out) show what they walked away with, not the emptied stack ($0)
+      const row = finalRows.find(function (r) { return r.name === p.name; });
+      setText(chips[i].children[1], money(row ? row.takeHome : (p.cashedOut ? p.takeHome : p.balance)));
     }
   }
+
+  function totalPutIn() { return S.table.players.reduce(function (t, p) { return t + p.putIn; }, 0); }
+  // The game is over when the settle-up is showing, or when the last player has cashed out and only the "game over" card is left.
+  function gameIsOver() { return S.state === "final" || (S.state === "gameover" && Rules.poolPlayers(S).length === 0); }
 
   function updateUi() {
     if (S.table.players.length === 0) return;          // nobody is seated yet (home screen)
@@ -2671,6 +2699,7 @@
     if (S.state === "final") {
       // CHANGED IN 14b: the settle-up says WHO PAYS WHOM, in plain words. The working-out is small print underneath.
       const st = Rules.settle(S);
+      saveLastSettle(st);                                       // NEW IN 16
       const lines = [];
       if (st.payments.length === 0) {
         lines.push(st.rows.length === 1 ? "You finish with " + money(st.rows[0].takeHome) + "." : "All square. Nobody owes anything.");
@@ -2682,10 +2711,72 @@
       });
       notes.push("Everyone pays " + money(STARTING_BALANCE + Rules.KITTY_PER_PLAYER) + " to start: " + money(STARTING_BALANCE) + " to play with and " + money(Rules.KITTY_PER_PLAYER) +
                  " into a shared kitty. Prizes come out of the kitty, so a friend's win is partly your money. At the end the kitty is split equally.");
-      return { title: "Settle up", lines: lines, notes: notes, primary: "See scoreboard", secondary: "" };
+      notes.push("You can look at this again from the start page: See last settle-up.");
+      return { title: "Settle up", lines: lines, balances: st.rows, notes: notes, primary: "See scoreboard", secondary: "" };
     }
     return null;   // while playing there is no overlay
   }
+
+  // ---- NEW IN 16: THE LAST SETTLE-UP ----
+  // ANALOGY: the settle-up is a receipt. It used to vanish when you left the screen. Now a copy goes in the drawer (localStorage) and
+  // the start page has a button that takes it out again.
+  const LAST_SETTLE_KEY = "frueets-last-settle";
+  function appendBalances(parent, rows) {
+    const head = document.createElement("div");
+    head.className = "ovHead";
+    head.textContent = "Where everyone ended up";
+    parent.appendChild(head);
+    rows.forEach(function (r) {
+      const div = document.createElement("div");
+      div.className = "ovBal";
+      const a = document.createElement("span"); a.textContent = r.name;
+      const b = document.createElement("span"); b.textContent = money(r.takeHome) + " (" + signed(r.netRounded) + ")";
+      div.appendChild(a); div.appendChild(b);
+      parent.appendChild(div);
+    });
+  }
+  function saveLastSettle(st) {
+    const sig = JSON.stringify([st.rows.map(function (r) { return [r.name, r.netRounded, r.takeHome]; }), st.payments]);
+    try {
+      const old = JSON.parse(localStorage.getItem(LAST_SETTLE_KEY) || "null");
+      if (old && old.sig === sig && Date.now() - old.when < 3600000) { return; }     // the same game, drawn again
+      localStorage.setItem(LAST_SETTLE_KEY, JSON.stringify({ sig: sig, when: Date.now(), st: st }));
+    } catch (e) {}
+    updateLastSettleButton();
+  }
+  function loadLastSettle() {
+    try { return JSON.parse(localStorage.getItem(LAST_SETTLE_KEY) || "null"); } catch (e) { return null; }
+  }
+  function whenText(ms) {
+    try { return new Date(ms).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; }
+  }
+  function updateLastSettleButton() {
+    const saved = loadLastSettle();
+    document.getElementById("lastSettleCard").classList.toggle("hidden", !saved);
+    if (saved) { document.getElementById("lastSettleBtn").textContent = "See last settle-up"; }
+  }
+  function showLastSettle() {
+    const saved = loadLastSettle();
+    if (!saved) { return; }
+    const card = document.getElementById("settleCard");
+    card.innerHTML = "";
+    const h = document.createElement("h3"); h.textContent = "Last settle-up"; card.appendChild(h);
+    const w = document.createElement("div"); w.className = "when"; w.textContent = whenText(saved.when); card.appendChild(w);
+    if (saved.st.payments.length === 0) {
+      const d = document.createElement("div"); d.className = "pay"; d.textContent = "All square. Nobody owes anything."; card.appendChild(d);
+    }
+    saved.st.payments.forEach(function (pay) {
+      const d = document.createElement("div"); d.className = "pay"; d.textContent = pay.from + " pays " + pay.to + " " + money(pay.amount); card.appendChild(d);
+    });
+    appendBalances(card, saved.st.rows);
+    const close = document.createElement("button"); close.className = "primary"; close.textContent = "Close";
+    close.addEventListener("click", function () { document.getElementById("settleModal").classList.add("hidden"); });
+    card.appendChild(close);
+    document.getElementById("settleModal").classList.remove("hidden");
+  }
+  document.getElementById("lastSettleBtn").addEventListener("click", showLastSettle);
+  document.getElementById("settleModal").addEventListener("click", function (e) { if (e.target === this) { this.classList.add("hidden"); } });
+  updateLastSettleButton();
 
   function renderOverlay() {
     const content = overlayContent();
@@ -2701,6 +2792,7 @@
       div.textContent = line;
       ovLines.appendChild(div);
     }
+    if (content.balances) { appendBalances(ovLines, content.balances); }   // NEW IN 16
     (content.notes || []).forEach(function (note) {        // NEW IN 14b: small print under the main lines
       const div = document.createElement("div");
       div.className = "ovNote";
@@ -2731,7 +2823,7 @@
     } else if (S.state === "gameover") {
       if (activePlayers().length > 0) advanceTurn();
       else if (S.table.players.length > 1) showFinal();
-      else goHome();
+      else { saveLastSettle(Rules.settle(S)); goHome(); }          // NEW IN 16: remember a single player's result as well
     } else if (S.state === "final") {
       goHome();
     }
